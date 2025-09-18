@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/hippocampus/manifest.schema.json",
+  "title": "Hippocampus Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifestVersion",
+    "manifestId",
+    "processedAt",
+    "status",
+    "sourceDocument",
+    "knowledgeIndex"
+  ],
+  "properties": {
+    "manifestVersion": { "type": "string" },
+    "manifestId": { "type": "string" },
+    "processedAt": { "type": "string", "format": "date-time" },
+    "status": { "type": "string", "enum": ["Awaiting Consolidation"] },
+    "sourceDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceType", "source", "sourceFormat"],
+      "properties": {
+        "sourceType": { "type": "string", "enum": ["text", "file"] },
+        "source": { "type": "string" },
+        "sourceFormat": { "type": "string" }
+      }
+    },
+    "knowledgeIndex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["references"],
+      "properties": {
+        "references": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/reference" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rawString",
+        "referenceType",
+        "sourceFormat",
+        "sourcePath",
+        "details"
+      ],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "rawString": { "type": "string" },
+        "referenceType": { "type": "string" },
+        "sourceFormat": { "type": "string" },
+        "sourcePath": { "type": "string" },
+        "details": { "type": "object" }
+      }
+    }
+  }
+}
