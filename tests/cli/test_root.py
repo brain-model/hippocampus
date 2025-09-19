@@ -21,11 +21,12 @@ def test_cli_text_success(tmp_path: Path):
     assert (out_dir / "manifest" / "manifest.json").exists()
 
 
-def test_cli_file_disabled(tmp_path: Path):
-    # --file deve ser rejeitado no MVP
-    with pytest.raises(SystemExit) as ei:
-        main(["-f", "foo.txt"])  # type: ignore[arg-type]
-    assert ei.value.code == 2  # argparse usage error
+def test_cli_file_enabled_success(tmp_path: Path):
+    p = tmp_path / "foo.txt"
+    p.write_text("Visit https://example.com", encoding="utf-8")
+    code = main(["-f", str(p), "-o", str(tmp_path)])  # type: ignore[arg-type]
+    assert code == 0
+    assert (tmp_path / "manifest" / "manifest.json").exists()
 
 
 def test_cli_error_propagates_when_verbose(monkeypatch, tmp_path: Path):

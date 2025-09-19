@@ -9,7 +9,8 @@ from __future__ import annotations
 import argparse
 import sys
 
-from core.application.pipeline import build_manifest_from_text
+from core.application.pipeline import (build_manifest_from_file,
+                                       build_manifest_from_text)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -29,18 +30,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     g = parser.add_mutually_exclusive_group(required=True)
     g.add_argument("-t", "--text", type=str, help="Input text content")
-    g.add_argument("-f", "--file", type=str, help="Input file path (disabled in MVP)")
+    g.add_argument("-f", "--file", type=str, help="Input file path")
     parser.add_argument(
         "-o", "--output", type=str, default="./hippo-out", help="Output directory"
     )
     parser.add_argument("--verbose", action="store_true", help="Verbose logging")
     args = parser.parse_args(argv)
 
-    if args.file:
-        parser.error("--file is not supported in MVP. Use --text.")
-
     try:
-        build_manifest_from_text(args.text, args.output)
+        if args.file:
+            build_manifest_from_file(args.file, args.output)
+        else:
+            build_manifest_from_text(args.text, args.output)
     except Exception as e:  # noqa: BLE001
         if args.verbose:
             raise
