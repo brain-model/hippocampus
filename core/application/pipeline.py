@@ -26,6 +26,7 @@ from core.resources import MANIFEST_SCHEMA_PATH
 from core.resources.templates import render_template
 from core.ui.console import (collect_section, friendly_ts, line, progress_bar,
                              summary_panel)
+from core.noesis.graph.types import GraphConfig
 
 from .validation import validate_manifest
 
@@ -61,6 +62,16 @@ def _render_report_and_end(
         tokens=getattr(extractor, "last_tokens", None) if mode == "llm" else None,
         llm_latency_ms=(
             getattr(extractor, "last_extract_latency_ms", None)
+            if mode == "llm"
+            else None
+        ),
+        graph_total_ms=(
+            getattr(extractor, "last_graph_total_ms", None)
+            if mode == "llm"
+            else None
+        ),
+        graph_tokens=(
+            getattr(extractor, "last_graph_tokens", None)
             if mode == "llm"
             else None
         ),
@@ -112,12 +123,49 @@ def _extract_with_timing(
     return extracted, latency
 
 
+class GraphExtractorAdapter:
+    def __init__(self, cfg: Any) -> None:
+        self.cfg = cfg
+        self.last_provider = None
+        self.last_model = None
+        self.last_tokens = None  # tokens from LLM extraction step, when available
+        self.last_extract_latency_ms = None
+        self.last_graph_total_ms = None
+        self.last_graph_tokens = None
+
+    def extract(self, text: str) -> dict:
+        from core.noesis.graph.agent import GraphOrchestrator
+
+        t0 = time.time()
+        out = GraphOrchestrator(self.cfg).run(text)
+        self.last_extract_latency_ms = int((time.time() - t0) * 1000)
+        m = out.get("metrics") or {}
+        toks = m.get("total_tokens") if isinstance(m, dict) else None
+        if isinstance(toks, dict):
+            self.last_graph_tokens = toks
+        total_ms = m.get("total_latency_ms") if isinstance(m, dict) else None
+        if isinstance(total_ms, int):
+            self.last_graph_total_ms = total_ms
+        # Prefer real LLM provider/model if present
+        if isinstance(out.get("llm"), dict):
+            self.last_provider = out["llm"].get("provider") or None
+            self.last_model = out["llm"].get("model") or None
+        else:
+            # Fallback identifiers for graph mode
+            self.last_provider = self.last_provider or "graph"
+            self.last_model = self.last_model or "llm-graph"
+        # If extract node provided per-step tokens, surface them as last_tokens
+        # Here we only have totals; keep last_tokens None to avoid ambiguity
+        return {"references": out.get("references", [])}
+
+
 def build_manifest_from_text(
     text: str,
     out_dir: str,
     verbose: bool = False,
     engine: str = "heuristic",
     engine_overrides: Dict[str, Any] | None = None,
+    graph_config: Any | None = None,
 ) -> Dict[str, Any]:
     """Build and persist a manifest from input text.
 
@@ -137,7 +185,11 @@ def build_manifest_from_text(
         OSError: If directory creation or file writing fails.
     """
     loader = TextLoader()
-    mode = engine if engine in {"heuristic", "llm"} else "heuristic"
+    use_graph = engine == "llm-graph"
+    if engine in {"heuristic", "llm", "llm-graph"}:
+        mode = "llm" if use_graph else engine
+    else:
+        mode = "heuristic"
     if mode == "llm":
         resolved_cfg, provenance = resolve_engine_config(engine_overrides or {})
     else:
@@ -146,7 +198,25 @@ def build_manifest_from_text(
         from core.infrastructure.extraction.langchain_agent import \
             LangChainExtractionAgent
 
-        extractor = LangChainExtractionAgent(cfg_override=resolved_cfg)
+        if use_graph:
+            # Merge CLI graph_config with resolved LLM cfg as engine_overrides
+            cfg = GraphConfig(enabled=True)
+            if graph_config:
+                # best-effort copy of attributes
+                for attr in (
+                    "use_fallback",
+                    "timeout_s",
+                    "retries",
+                    "backoff_base_s",
+                    "backoff_max_s",
+                    "jitter_s",
+                ):
+                    if hasattr(graph_config, attr):
+                        setattr(cfg, attr, getattr(graph_config, attr))
+            cfg.engine_overrides = resolved_cfg
+            extractor = GraphExtractorAdapter(cfg)
+        else:
+            extractor = LangChainExtractionAgent(cfg_override=resolved_cfg)
     else:
         extractor = HeuristicExtractionAgent()
     writer = ManifestJsonWriter()
@@ -276,6 +346,7 @@ def build_manifest_from_file(
     verbose: bool = False,
     engine: str = "heuristic",
     engine_overrides: Dict[str, Any] | None = None,
+    graph_config: Any | None = None,
 ) -> Dict[str, Any]:
     """Build and persist a manifest from an input file.
 
@@ -295,7 +366,11 @@ def build_manifest_from_file(
         OSError: If file reading or writing fails.
     """
     loader = get_loader_for_file(file_path)
-    mode = engine if engine in {"heuristic", "llm"} else "heuristic"
+    use_graph = engine == "llm-graph"
+    if engine in {"heuristic", "llm", "llm-graph"}:
+        mode = "llm" if use_graph else engine
+    else:
+        mode = "heuristic"
     if mode == "llm":
         resolved_cfg, provenance = resolve_engine_config(engine_overrides or {})
     else:
@@ -304,7 +379,23 @@ def build_manifest_from_file(
         from core.infrastructure.extraction.langchain_agent import \
             LangChainExtractionAgent
 
-        extractor = LangChainExtractionAgent(cfg_override=resolved_cfg)
+        if use_graph:
+            cfg = GraphConfig(enabled=True)
+            if graph_config:
+                for attr in (
+                    "use_fallback",
+                    "timeout_s",
+                    "retries",
+                    "backoff_base_s",
+                    "backoff_max_s",
+                    "jitter_s",
+                ):
+                    if hasattr(graph_config, attr):
+                        setattr(cfg, attr, getattr(graph_config, attr))
+            cfg.engine_overrides = resolved_cfg
+            extractor = GraphExtractorAdapter(cfg)
+        else:
+            extractor = LangChainExtractionAgent(cfg_override=resolved_cfg)
     else:
         extractor = HeuristicExtractionAgent()
     writer = ManifestJsonWriter()
@@ -386,13 +477,15 @@ def build_manifest_from_file(
         citation_count = sum(
             1 for r in refs if r.get("referenceType") == "in_text_citation"
         )
-        render_template(
-            _TPL_SUMMARY,
-            mode=mode,
-            url_count=url_count,
-            citation_count=citation_count,
-            total_refs=len(refs),
-            latency_ms=total_latency,
+        line(
+            render_template(
+                _TPL_SUMMARY,
+                mode=mode,
+                url_count=url_count,
+                citation_count=citation_count,
+                total_refs=len(refs),
+                latency_ms=total_latency,
+            )
         )
 
     manifest: Dict[str, Any] = {
@@ -413,11 +506,14 @@ def build_manifest_from_file(
 
     validate_manifest(manifest, MANIFEST_SCHEMA_PATH)
     _render_report_and_end(
-        mode=mode,
-        manifest=manifest,
-        refs=refs,
-        total_latency=total_latency,
-        verbose=verbose,
+        verbose,
+        mode,
+        extractor,
+        url_count,
+        citation_count,
+        len(refs),
+        total_latency,
+        manifest,
     )
     writer.write(manifest, out_dir)
     return manifest

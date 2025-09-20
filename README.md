@@ -71,6 +71,26 @@ Engine flags (overrides):
 --retries INT              Retry attempts for LLM calls
 ```
 
+### LangGraph engine (experimental)
+
+The graph orchestrator runs a minimal flow (classify → extract → consolidate) that can be enabled via `--engine llm-graph`. It reuses the LLM configuration (provider/model/etc.) and falls back to heuristics when exceptions occur.
+
+Enable and run:
+
+```bash
+# Use the graph-backed extractor (UI shows mode=llm)
+uv run hippo collect --engine llm-graph -t "See Fuster (2003) https://example.com" -o ./hippo-out
+
+# Verbose mode displays phases and aggregated timings
+uv run hippo collect --engine llm-graph -f ./document.txt -o ./hippo-out --verbose
+```
+
+Notes:
+
+- In this mode, the pipeline uses an adapter that calls `GraphOrchestrator`, while preserving the CLI output/report.
+- The final report includes provider/model and tokens when the underlying LLM path runs; heuristics are used as safe fallback.
+- Metrics are aggregated by the graph and surfaced as `total_latency_ms` and `total_tokens` internally.
+
 ### Config provenance (verbose)
 
 In verbose mode, the CLI shows where each engine parameter came from:
@@ -84,7 +104,7 @@ Format: `key(source)=value` where `source` is one of `cli`, `local`, `global`, o
 
 ### LLM metrics
 
-When using `--engine llm`, the report displays provider/model and token usage; latency may also be shown when available:
+When using `--engine llm` (or `llm-graph`), the report displays provider/model and token usage; latency may also be shown when available:
 
 ```text
 📊 Collect Report
@@ -97,6 +117,42 @@ When using `--engine llm`, the report displays provider/model and token usage; l
 • Tokens: prompt=260, completion=71
 • LLM Latency: 10281 ms
 ```
+
+### Prompts & Templates
+
+Prompts are versioned under `core/resources/prompts/`:
+
+- `extract_references_en.md`
+- `classify_reference_type_en.md`
+- `consolidate_manifest_en.md`
+
+Templates used by the CLI live under `core/resources/templates/`.
+
+### Optional Extras
+
+Install extras as needed:
+
+```bash
+# LLM providers
+uv sync --extra llm
+
+# Graph orchestrator (placeholder for future graph-specific deps)
+uv sync --extra graph
+
+# PDF loaders
+uv sync --extra pdf
+```
+
+### Graph Config (flags/env)
+
+The graph path supports basic configuration via environment variables (defaults shown):
+
+- `HIPPO_GRAPH_FALLBACK=1` controls heuristic fallback on errors/timeouts (1/0)
+- `HIPPO_GRAPH_TIMEOUT_S=60` per-node timeout (seconds)
+- `HIPPO_GRAPH_RETRIES=0` number of retry attempts (integer)
+- `HIPPO_GRAPH_BACKOFF_BASE_S=0.1`, `HIPPO_GRAPH_BACKOFF_MAX_S=2.0`, `HIPPO_GRAPH_JITTER_S=0.05`
+
+Note: when using `--engine llm-graph`, engine CLI overrides like `--provider`, `--model`, `--base_url` are honored by the underlying LLM extractor. The final report displays provider/model for the LLM step when applicable and surfaces "Graph Total"/"Graph Tokens" as aggregated metrics.
 
 Make targets:
 

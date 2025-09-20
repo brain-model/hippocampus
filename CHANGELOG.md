@@ -8,6 +8,23 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 _No unreleased changes yet._
 
+## [0.5.0] - 2025-09-20
+
+### Added (0.5.0)
+
+- Graph orchestrator (Fase 5): nós `classify → extract → consolidate` com contratos tipados.
+- Integração `--engine llm-graph` no pipeline/CLI via adapter (UI mantém modo llm).
+- Métricas agregadas no grafo: `total_latency_ms`, `total_tokens` e breakdown por nó.
+- Relatório do CLI mostra métricas do grafo (Graph Total/Graph Tokens) quando aplicável.
+- Retries e tratamento de `TimeoutError` no nó Extract, com fallback heurístico opcional.
+- Prompts versionados: `classify_reference_type_en.md`, `consolidate_manifest_en.md` (além de `extract_references_en.md`).
+- Extra opcional `graph` no `pyproject.toml` e documentação correspondente no README.
+
+### Changed (0.5.0)
+
+- README atualizado com seção de LangGraph (experimental) e extras opcionais.
+- TODO/roadmap marcado com itens concluídos da Fase 5 e cobertura ≥ 95%.
+
 ## [0.4.0] - 2025-09-20
 
 ### Added (0.4.0)
