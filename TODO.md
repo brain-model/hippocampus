@@ -12,7 +12,7 @@ Este arquivo consolida o plano de implementação e o backlog de tarefas por fas
 1. Foundation/Scaffold: estrutura `core/`, empacotamento, entrypoint, contratos base, mover `prompts/` e `templates/` para `resources/`, e schema em `resources/schemas/`.
 2. MVP (Texto): CLI raiz, loader texto, extrator heurístico, validação e geração de `manifest.json`.
 3. Multiformato: loaders `markdown/txt`, PDF, LaTeX básico; interface unificada e registry de loaders.
-4. LLM Multi‑provider & Config: suporte a OpenAI/Gemini/Claude/DeepSeek, configuração via `hippocampus set` (key=value e YAML), templates de saída com emojis.
+4. LLM Multi‑provider & Config: suporte a OpenAI/Gemini/Claude/DeepSeek, configuração via `hippo set` (key=value e YAML), templates de saída com emojis.
 5. LangGraph/LLM: orquestrador mínimo, biblioteca de prompts, reuso da configuração da Fase 4 e fallback heurístico.
 6. Validação Robusta: `manifest.schema.json`, validação polimórfica de `details`, versionamento `manifestVersion`.
 7. DX/Observabilidade: logging estruturado, `--verbose`, traces opcionais, CI (lint+test).
@@ -70,47 +70,50 @@ Este arquivo consolida o plano de implementação e o backlog de tarefas por fas
 ### Fase 4 — LLM Multi‑provider & Configurações
 
 1) Dependências e Providers
-   - [ ] Adicionar dependências estáveis: `langchain>=0.2`, `langchain-openai`, `langchain-google-genai`, `langchain-anthropic`, `keyring`, `pyyaml` (e manter `pypdf`).
-   - [ ] DeepSeek via cliente OpenAI‑compatível (`ChatOpenAI` com `base_url`) e `DEEPSEEK_API_KEY`.
+   - [x] Adicionar dependências estáveis de providers LLM: `langchain>=0.2`, `langchain-openai`, `langchain-google-genai`, `langchain-anthropic` (manter `pypdf`).
+   - [x] Dependências de configuração: `keyring`, `pyyaml` e `jinja2` adicionadas.
+   - [x] DeepSeek: documentado uso via `engine.base_url` + `api.deepseek.key` (integrado no agente em 5).
 
 2) Gerente de Configuração
-   - [ ] `core/infrastructure/config/manager.py`: leitura/escrita de config por escopo.
-   - [ ] Escopos: Local (`.hippo/config.json`) e Global (`~/.config/hippocampus/config.json`).
-   - [ ] Secrets no `keyring` por provider (ex.: `api.openai.key`), com fallback seguro (arquivo com `chmod 600` + aviso) se `keyring` indisponível.
-   - [ ] API: `get/set` para chaves, `get_secret/set_secret` para segredos, mascaramento em outputs.
+   - [x] `core/infrastructure/config/manager.py`: leitura/escrita de config por escopo.
+   - [x] Escopos: Local (`.hippo/config.json`) e Global (`~/.config/hippocampus/config.json`).
+   - [x] Secrets no `keyring` por provider (ex.: `api.openai.key`), com fallback seguro (arquivo com `chmod 600`) se `keyring` indisponível.
+   - [x] API: `get/set` para chaves, `get_secret/set_secret` para segredos, mascaramento em outputs.
 
 3) CLI `set` (configuração)
-   - [ ] `hippocampus set key=value [--local|--global]`: grava chave simples (engine.\* ou api.\*).
-   - [ ] `hippocampus set --file config.yaml [--merge|--reset] [--local|--global]`: aplica YAML com merge (default) ou reset.
-   - [ ] `hippocampus set --generate-template [-o template.yaml]`: gera um YAML de exemplo com todas as chaves possíveis.
-   - [ ] Chaves suportadas:
-       - Engine: `engine.provider`, `engine.model`, `engine.temperature`, `engine.max_tokens`, `engine.timeout_s`, `engine.base_url` (para providers compatíveis)
-       - Secrets: `api.openai.key`, `api.gemini.key`, `api.claude.key`, `api.deepseek.key` (armazenadas no keyring)
+   - [x] `hippo set key=value [--local|--global]`: grava chave simples (`engine.*` ou `api.*`).
+   - [x] `hippo set --file config.yaml [--merge|--reset] [--local|--global]`: aplica YAML com merge (default) ou reset.
+   - [x] `hippo set --generate-template [-o template.yaml]`: gera um YAML de exemplo com todas as chaves possíveis.
+   - [x] Chaves suportadas:
+      - Engine: `engine.provider`, `engine.model`, `engine.temperature`, `engine.max_tokens`, `engine.timeout_s`, `engine.base_url`, `engine.retries` (para providers compatíveis)
+      - Secrets: `api.openai.key`, `api.gemini.key`, `api.claude.key`, `api.deepseek.key` (armazenadas no keyring)
 
 4) Templates de Saída do CLI
-   - [ ] `core/resources/templates/`: `config_set.txt`, `config_apply.yaml.txt`, `error.txt`, `llm_run.txt` com formatação e emojis.
-   - [ ] `TemplateRenderer` simples para interpolação (`{placeholder}`).
+   - [x] `core/resources/templates/`: `config_set.j2`, `config_apply.yaml.j2`, `error.j2`, `llm_run.j2` com formatação e emojis.
+   - [x] Renderer com Jinja2 (`{{ placeholder }}`) via `core/resources/templates/manager.py`.
 
 5) Agente LLM Multi‑provider
-   - [ ] `core/infrastructure/extraction/langchain_agent.py`: implementa `ExtractionAgent`.
-   - [ ] Fábrica de modelos por provider: OpenAI (`ChatOpenAI`), Gemini (`ChatGoogleGenerativeAI`), Claude (`ChatAnthropic`), DeepSeek (OpenAI‑compatível via `base_url`).
-   - [ ] Prompt de extração: `core/resources/prompts/extract_references_en.txt` (few‑shot) com saída JSON válida.
-   - [ ] Parsing e validação de JSON (lista `references`); timeouts e retries configuráveis.
+   - [x] `core/infrastructure/extraction/langchain_agent.py`: implementa `ExtractionAgent`.
+   - [x] Fábrica de modelos por provider: OpenAI (`ChatOpenAI`), Gemini (`ChatGoogleGenerativeAI`), Claude (`ChatAnthropic`), DeepSeek (OpenAI‑compatível via `base_url`).
+   - [x] Prompt de extração: `core/resources/prompts/extract_references_en.md` (few‑shot) com saída JSON válida.
+   - [x] Parsing e validação de JSON (lista `references`); timeouts e retries configuráveis.
 
 6) Integração no Pipeline/CLI
-   - [ ] `--engine {llm,heuristic}` (default: `llm`), `--provider`, `--model`, `--temperature`, `--max-tokens`, `--timeout-s`, `--base-url`.
-   - [ ] Resolução de config: flags CLI > config local > config global > defaults.
-   - [ ] Mensagens de execução via templates (emojis, tokens, latência); erro claro quando faltar API key.
+   - [x] `--engine {llm,heuristic}`, `--provider`, `--model`, `--temperature`, `--max-tokens`, `--timeout-s`, `--base-url`, `--retries`.
+   - [x] Resolução de config: flags CLI > config local > config global > defaults (resolver central com proveniência).
+   - [x] Mensagens de execução via templates (emojis, tokens, latência/Engine); erro claro quando faltar API key.
 
 7) Testes e Qualidade
-   - [ ] Testes do config manager (local/global, keyring mock, merge/reset YAML, mascaramento).
-   - [ ] Testes do subcomando `set` (key=value, --file, --generate-template), validação de mensagens/templating.
-   - [ ] Testes do agente LLM (mocks por provider: sucesso, JSON inválido, timeout) e pipeline/CLI com seleção de engine.
+   - [x] Testes do config manager (local/global, keyring fallback via integração, merge/reset YAML, mascaramento) — coberto em integração/subcomando.
+   - [x] Testes do subcomando `set` (key=value, --file, --generate-template), validação de mensagens/templating.
+   - [x] Testes do agente LLM (mocks por provider: sucesso, JSON inválido, timeout) e pipeline/CLI com seleção de engine.
    - [ ] Cobertura >= 95% (alvo 100% nos módulos novos); lint/format OK.
+
+> Nota: Itens incrementais de melhoria deste PR (prioridades P0/P1/P2) estão detalhados em `BACKLOG.md`.
 
 ### Fase 5 — LangGraph/LLM
 
-1) [ ] Biblioteca de prompts em `prompts/` (`extract_references.md`, `classify_reference_type.md`, etc.) com versionamento.
+1) [ ] Biblioteca de prompts em `core/resources/prompts/` (`extract_references.md`, `classify_reference_type.md`, etc.) com versionamento.
 2) [ ] `core/noesis/graph/agent.py`: grafo mínimo (classify → extract → consolidate).
 3) [ ] Reusar configuração/engine da Fase 4; fallback para heurística quando indisponível.
 4) [ ] Testes unitários e de integração com LLM mockado com cobertura >= 90%.

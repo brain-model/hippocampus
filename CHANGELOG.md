@@ -6,9 +6,25 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
-### Added (Unreleased)
+_No unreleased changes yet._
 
-- Planning for Phase 4: LLM multi-provider (OpenAI, Gemini, Claude, DeepSeek), config manager with `hippocampus set`, YAML apply, CLI templates with emojis.
+## [0.4.0] - 2025-09-20
+
+### Added (0.4.0)
+
+- LLM multi-provider: OpenAI, Gemini, Claude e DeepSeek (compat OpenAI via `base_url`).
+- Config Manager: escopos Local/Global, `get/set`, secrets via `keyring` com fallback seguro.
+- CLI `hippo set`: `key=value`, `--file config.yaml` com `--merge|--reset`, `--generate-template`.
+- Templates Jinja2 com emojis: `config_set.j2`, `config_apply.yaml.j2`, `llm_run.j2`, `error.j2`.
+- Agente de extração com LangChain (`ExtractionAgent`) e prompt `extract_references_en.md` (few-shot) retornando JSON.
+- Opções de engine no CLI/pipeline: `--engine {llm,heuristic}`, `--provider`, `--model`, `--temperature`, `--max-tokens`, `--timeout-s`, `--base-url`, `--retries`.
+- Testes: config manager (local/global, keyring fallback, merge/reset), subcomando `set`, agente LLM (mocks de sucesso/JSON inválido/timeout) e integração no pipeline/CLI.
+
+### Changed (0.4.0)
+
+- Resolução central de configuração: prioridade CLI > local > global > defaults, com proveniência nas mensagens.
+- Mensagens do CLI renderizadas por templates (emojis), incluindo latência e informações de engine.
+- Documentação atualizada para Fase 4; `TODO.md` marcado como concluído para a fase.
 
 ## [0.3.0] - 2025-09-18
 
@@ -47,6 +63,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Packaging via `pyproject.toml` with console script `hippocampus`.
 - Initial tests and CI setup groundwork.
 
-[Unreleased]: https://example.com/compare/0.3.0...HEAD
+[Unreleased]: https://example.com/compare/0.4.0...HEAD
+[0.4.0]: https://example.com/compare/0.3.0...0.4.0
 [0.3.0]: https://example.com/compare/0.2.0...0.3.0
 [0.2.0]: https://example.com/compare/0.1.0...0.2.0
