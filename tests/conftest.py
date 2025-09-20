@@ -10,4 +10,5 @@ pytest_plugins = (
     "tests.fixtures.common.paths",
     "tests.fixtures.infrastructure.loader_text",
     "tests.fixtures.cli.args",
+    "tests.fixtures.domain.interfaces",
 )

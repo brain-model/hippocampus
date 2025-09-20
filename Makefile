@@ -1,4 +1,4 @@
-.PHONY: setup lint format test clean run ci
+.PHONY: setup lint format test clean run ci hippo hippo-install hippo-uninstall
 
 
 setup: clean ## Instala/Ativa Python correto, cria env e instala dependências com UV (inclui dev)
@@ -20,6 +20,19 @@ test: ## Executa os testes unitários
 run: ## Executa o CLI com ARGS='-t "..." -o ./.out'
 	@[ -n "$(ARGS)" ] || (echo "Defina ARGS, ex.: make run ARGS='-t \"txt\" -o ./.out'" && exit 1)
 	uv run python -m core.cli.root $(ARGS)
+
+hippo: ## Executa o comando hippo com ARGS (ex.: make hippo ARGS='set --generate-template -o h.yaml')
+	@[ -n "$(ARGS)" ] || (echo "Defina ARGS, ex.: make hippo ARGS='-t \"txt\" -o ./.out'" && exit 1)
+	uv run hippo $(ARGS)
+
+hippo-install: ## Instala o comando hippo globalmente (~/.local/bin) via uv tool install .
+	uv tool install .
+	@echo "Instalado. Certifique-se de ter ~/.local/bin no PATH."
+
+hippo-uninstall: ## Remove o comando hippo instalado globalmente
+	uv tool uninstall hippo || true
+	uv tool uninstall hippocampus || true
+	@echo "Removido."
 
 ci: ## Executa lint e testes (com gate de cobertura)
 	$(MAKE) lint

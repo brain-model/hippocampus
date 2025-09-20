@@ -1,0 +1,2 @@
+{% import "cli/base_macros.j2" as cli %}
+{{ cli.llm_run(provider, model, temperature, latency_ms, prompt_tokens, completion_tokens) }}

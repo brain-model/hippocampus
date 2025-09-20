@@ -1,0 +1,14 @@
+{% import "cli/base_macros.j2" as cli %}
+{{ cli.report(
+	mode,
+	url_count,
+	citation_count,
+	total_refs,
+	total_ms,
+	manifest_id,
+	processed_friendly,
+	provider=provider|default(None),
+	model=model|default(None),
+	tokens=tokens|default(None),
+	llm_latency_ms=llm_latency_ms|default(None)
+) }}

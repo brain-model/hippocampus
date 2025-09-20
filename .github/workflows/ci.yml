@@ -31,19 +31,17 @@ jobs:
           python -V
           uv --version
           # Instala o projeto com deps de dev
-          uv pip install -e .
-          uv pip install .[dev]
+          make setup
 
       - name: Lint (ruff) and Format Check (black)
         run: |
-          uv run -q ruff check .
-          uv run -q black --check .
+          make lint
 
       - name: Test
         env:
           PYTHONWARNINGS: default
         run: |
-          uv run -q pytest -q --cov=core --cov-report=term-missing
+          make test
 
       - name: Security (pip-audit)
         run: |

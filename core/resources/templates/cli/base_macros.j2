@@ -1,0 +1,42 @@
+{# Base macros for CLI text rendering across contexts #}
+{% macro begin(mode, source_type, source_format, timestamp) -%}
+begin={{ mode }} | source={{ source_type }} | format={{ source_format }} | timestamp={{ timestamp }}
+{%- endmacro %}
+
+{% macro phase_load(mode, loader_name, latency_ms, char_count) -%}
+phase=load | loader={{ loader_name }} | latency_ms={{ latency_ms }} | chars={{ char_count }}
+{%- endmacro %}
+
+{% macro phase_extract(mode, url_count, citation_count, total_refs, latency_ms) -%}
+phase=extract | urls={{ url_count }} | citations={{ citation_count }} | total_refs={{ total_refs }} | latency_ms={{ latency_ms }}
+{%- endmacro %}
+
+{% macro summary(mode, url_count, citation_count, total_refs, latency_ms) -%}
+summary={{ mode }} | urls={{ url_count }} | citations={{ citation_count }} | total_refs={{ total_refs }} | latency_ms={{ latency_ms }}
+{%- endmacro %}
+
+{% macro end(mode, manifest_id, url_count, citation_count, total_refs, processed_at, latency_ms) -%}
+end={{ mode }} | manifest_id={{ manifest_id }} | urls={{ url_count }} | citations={{ citation_count }} | total_refs={{ total_refs }} | processed_at={{ processed_at }} | total_latency_ms={{ latency_ms }}
+{%- endmacro %}
+
+{% macro report(mode, url_count, citation_count, total_refs, total_ms, manifest_id, processed_friendly, provider=None, model=None, tokens=None, llm_latency_ms=None) -%}
+📊 Collect Report
+• Mode: {{ mode }}
+• URLs: {{ url_count }} | Citations: {{ citation_count }} | Total: {{ total_refs }}
+• Time: {{ total_ms }} ms
+• Manifest: {{ manifest_id }}
+• Processed: {{ processed_friendly }}
+{% if provider and model %}
+• Engine: {{ provider }}/{{ model }}
+{% endif %}
+{% if tokens %}
+• Tokens: prompt={{ tokens.prompt or 0 }}, completion={{ tokens.completion or 0 }}
+{% endif %}
+{% if llm_latency_ms is not none %}
+• LLM Latency: {{ llm_latency_ms }} ms
+{% endif %}
+{%- endmacro %}
+
+{% macro llm_run(provider, model, temperature, latency_ms, prompt_tokens, completion_tokens) -%}
+🤖 {{ provider }}/{{ model }} | 🔥 {{ temperature }} | ⏱ {{ latency_ms }}ms | 🧾 {{ prompt_tokens }}/{{ completion_tokens }}
+{%- endmacro %}
