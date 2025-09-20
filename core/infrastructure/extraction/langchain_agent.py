@@ -387,7 +387,8 @@ class LangChainExtractionAgent(ExtractionAgent):
         citation = r.get("citation") or r.get("text")
 
         if not url and doi:
-            url = f"https://doi.org/{doi}".strip()
+            doi = str(doi).strip()
+            url = f"https://doi.org/{doi}"
 
         details: Dict[str, Any] = {}
         if title:
