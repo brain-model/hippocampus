@@ -228,13 +228,15 @@ def build_manifest_from_text(
         citation_count = sum(
             1 for r in refs if r.get("referenceType") == "in_text_citation"
         )
-        render_template(
-            _TPL_SUMMARY,
-            mode=mode,
-            url_count=url_count,
-            citation_count=citation_count,
-            total_refs=len(refs),
-            latency_ms=total_latency,
+        line(
+            render_template(
+                _TPL_SUMMARY,
+                mode=mode,
+                url_count=url_count,
+                citation_count=citation_count,
+                total_refs=len(refs),
+                latency_ms=total_latency,
+            )
         )
 
     manifest: Dict[str, Any] = {
