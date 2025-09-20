@@ -172,7 +172,8 @@ class LangChainExtractionAgent(ExtractionAgent):
                 raise RuntimeError("LLM output missing 'references' list")
             return self._normalize_output(data)
         except Exception as e:  # noqa: BLE001
-            self._handle_provider_errors(e, provider=cfg.provider)
+            provider = getattr(locals().get('cfg'), 'provider', None)
+            self._handle_provider_errors(e, provider=provider)
 
     def _update_last_metadata(self, cfg, model, prompt):
         start = __import__("time").time()
