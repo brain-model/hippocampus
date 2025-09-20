@@ -412,53 +412,12 @@ def build_manifest_from_file(
     manifest["processedAt"] = datetime.now(timezone.utc).isoformat()
 
     validate_manifest(manifest, MANIFEST_SCHEMA_PATH)
-    if verbose:
-        report = render_template(
-            _TPL_REPORT,
-            mode=mode,
-            url_count=url_count,
-            citation_count=citation_count,
-            total_refs=len(refs),
-            total_ms=total_latency,
-            manifest_id=manifest["manifestId"],
-            processed_friendly=friendly_ts(manifest["processedAt"]),
-        )
-        summary_panel("Collect Report", report)
-        line(
-            render_template(
-                _TPL_END,
-                mode=mode,
-                manifest_id=manifest["manifestId"],
-                url_count=url_count,
-                citation_count=citation_count,
-                total_refs=len(refs),
-                processed_at=manifest["processedAt"],
-                latency_ms=total_latency,
-            )
-        )
-    else:
-        report = render_template(
-            _TPL_REPORT,
-            mode=mode,
-            url_count=url_count,
-            citation_count=citation_count,
-            total_refs=len(refs),
-            total_ms=total_latency,
-            manifest_id=manifest["manifestId"],
-            processed_friendly=friendly_ts(manifest["processedAt"]),
-        )
-        line(report)
-        line(
-            render_template(
-                _TPL_END,
-                mode=mode,
-                manifest_id=manifest["manifestId"],
-                url_count=url_count,
-                citation_count=citation_count,
-                total_refs=len(refs),
-                processed_at=manifest["processedAt"],
-                latency_ms=total_latency,
-            )
-        )
+    _render_report_and_end(
+        mode=mode,
+        manifest=manifest,
+        refs=refs,
+        total_latency=total_latency,
+        verbose=verbose,
+    )
     writer.write(manifest, out_dir)
     return manifest
