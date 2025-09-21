@@ -107,16 +107,82 @@ Este arquivo consolida o plano de implementação e o backlog de tarefas por fas
    - [x] Testes do config manager (local/global, keyring fallback via integração, merge/reset YAML, mascaramento) — coberto em integração/subcomando.
    - [x] Testes do subcomando `set` (key=value, --file, --generate-template), validação de mensagens/templating.
    - [x] Testes do agente LLM (mocks por provider: sucesso, JSON inválido, timeout) e pipeline/CLI com seleção de engine.
-   - [ ] Cobertura >= 95% (alvo 100% nos módulos novos); lint/format OK.
+   - [x] Cobertura >= 95% (alvo 100% nos módulos novos); lint/format OK.
 
 > Nota: Itens incrementais de melhoria deste PR (prioridades P0/P1/P2) estão detalhados em `BACKLOG.md`.
 
 ### Fase 5 — LangGraph/LLM
 
-1) [ ] Biblioteca de prompts em `core/resources/prompts/` (`extract_references.md`, `classify_reference_type.md`, etc.) com versionamento.
-2) [ ] `core/noesis/graph/agent.py`: grafo mínimo (classify → extract → consolidate).
-3) [ ] Reusar configuração/engine da Fase 4; fallback para heurística quando indisponível.
-4) [ ] Testes unitários e de integração com LLM mockado com cobertura >= 90%.
+1) [x] Especificar grafo e contratos
+   - Definir estados, nós (classify → extract → consolidate), entradas/saídas, erros e timeouts.
+   - Acceptance: diagrama/README curto da fase + tipos em `core/noesis/graph/types.py`.
+
+1) [x] Estrutura inicial do módulo graph
+   - Criar `core/noesis/graph/{agent.py,nodes/,types.py}` e esqueleto de orquestrador (sem dependências pesadas por padrão).
+   - Acceptance: importável quando o grafo está desabilitado; feature flag/env preparado.
+
+1) [x] Biblioteca de prompts versionada
+   - Centralizar prompts: `classify_reference_type_en.md`, `extract_references_en.md`, `consolidate_manifest_en.md` em `core/resources/prompts/`.
+   - Acceptance: carregamento via manager de resources/templates com versionamento simples.
+
+1) [x] Nó Classify
+   - Classificar trechos/referências candidatas (tipos de referência, heurísticas auxiliares).
+   - Acceptance: função pura com entrada texto e saída tipada; facilmente mockável.
+
+1) [x] Nó Extract
+   - Extrair campos/detalhes via LLM (reutilizando configuração da Fase 4), com retries/timeouts.
+   - Acceptance: usar `LangChainExtractionAgent` sob capa; respeitar `engine.*` e segredos.
+
+1) [x] Nó Consolidate
+   - Consolidar classificações + extrações em referências normalizadas.
+   - Acceptance: saída compatível com `manifest.schema.json` (estrutura `knowledgeIndex.references`).
+
+1) [x] Fallback heurístico por nó
+   - Encadear fallback para `HeuristicExtractionAgent` por nó quando houver falhas (configurável por flag/env).
+   - Acceptance: comportamento coberto por testes, com logs/resumos claros.
+
+1) [x] Integração no pipeline/CLI
+   - Adicionar modo `engine=llm-graph` (ou flag/env `HIPPO_USE_LANGGRAPH`) no pipeline/CLI.
+   - Acceptance: pipeline usa o grafo quando habilitado, mantendo compatibilidade com `heuristic` e `llm` atuais.
+
+1) [x] Métricas e telemetria do grafo
+   - Agregar tokens/latência por nó e total; expor no relatório final.
+   - Acceptance: campos de métricas presentes quando `engine=llm-graph`.
+
+1) [x] Tratamento de erros e política de retries
+
+   - Mapear erros por provedor também no grafo; retries exponenciais por nó; preservar `TimeoutError`.
+   - Acceptance: testes de erro cobrem openai/gemini/claude/deepseek e cenários de timeout.
+
+1) [x] Dependências e extras opcionais
+
+   - Adicionar `langgraph` (ou manter orquestrador leve sem dependência externa) como extra `graph`.
+   - Acceptance: `[project.optional-dependencies].graph` documentado; instalação opcional.
+
+1) [x] Testes unitários dos nós
+
+   - Cobrir Classify/Extract/Consolidate com LLM mockado e entradas representativas.
+   - Acceptance: cobertura ≥ 90% nos módulos do grafo.
+
+1) [x] Teste de integração do grafo (e2e)
+
+   - Fluxo ponta a ponta com mocks determinísticos e fallback heurístico.
+   - Acceptance: gera `manifest.json` válido e preenche métricas do grafo.
+
+1) [x] Docs e CHANGELOG 0.5.0
+
+   - Atualizar README (uso, flags, extras) e CHANGELOG (Fase 5).
+   - Acceptance: exemplos executáveis, notas de compatibilidade e feature flags.
+
+1) [x] QA gate (lint+tests)
+
+   - Executar `make lint && make test` e revisar cobertura/qualidade (sem regressões).
+   - Acceptance: gate ≥ 90% e checks verdes.
+
+Status: Concluída em 2025-09-20 via PR #2 (`feature/langgraph-orchestrator`).
+
+- Evidências: CLI com `engine=llm-graph` e flags de grafo; orquestrador classify → extract → consolidate com métricas (tokens/latência) e fallback heurístico; retries com backoff e jitter; integração no pipeline/relatórios; README/CHANGELOG atualizados; extra `graph` definido em `pyproject.toml`.
+- Qualidade: `make lint` e `make test` verdes; 214 testes passando; cobertura ~95% (>90%).
 
 ### Fase 6 — Validação Robusta
 

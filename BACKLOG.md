@@ -26,13 +26,6 @@ Contexto: consolidar as sugestões identificadas na revisão mais recente para e
      - Alternativamente, a chamada morta é removida; a decisão fica registrada no PR.
      - Teste de snapshot/saída cobre o comportamento escolhido.
 
-1. [P1] Robustez no handler ao acessar `cfg.provider`
-
-   - Descrição: Em `LangChainExtractionAgent.extract`, no `except`, proteger o acesso a `cfg.provider` para evitar `UnboundLocalError` se a falha ocorrer antes da inicialização de `cfg`.
-   - Critérios de aceite:
-     - Uso de `provider = getattr(locals().get("cfg"), "provider", None)` antes de `_handle_provider_errors`.
-     - Teste que simula erro precoce confirma ausência de `UnboundLocalError` e caminho genérico de erro preservado.
-
 1. [P2] Observabilidade discreta no handler
 
    - Descrição: Adicionar `logger.debug` (ou equivalente) no início de `_handle_provider_errors` com `provider` e `type(e).__name__`, sem poluir a UX padrão.
@@ -68,26 +61,16 @@ Contexto: consolidar as sugestões identificadas na revisão mais recente para e
      - Testes confirmam precedência esperada e ausência de vazamento de segredos.
      - Casos de erro (arquivo inválido, ausente) tratados com mensagens claras.
 
-1. [P2] Atualizar descrição do PR
-
-   - Descrição: Aplicar corpo de `/tmp/pr-1-description.txt` via `gh pr edit 1 --body-file` e validar no PR.
-   - Critérios de aceite:
-     - PR atualizado com seções de Features, Fixes, Refactor e Notas.
-     - Links/formatos renderizam corretamente na UI do GitHub.
-
-1. [P2] Revisar README/CHANGELOG
-
-   - Descrição: Ajustar README/CHANGELOG com as novidades (proveniência do engine, DeepSeek `base_url`, notas de segurança e exemplos de configuração).
-   - Critérios de aceite:
-     - Exemplos de uso atualizados; referência a variáveis de ambiente por provedor.
-     - Seções de versionamento coerentes com 0.4.0.
-
 1. [P0] QA Gate pós-mudanças
 
-   - Descrição: Executar `make lint && make test`, assegurar cobertura ≥ 90% e checks do PR verdes.
-   - Critérios de aceite:
-     - Lint sem erros; testes verdes; cobertura ≥ 90%.
-     - Comentário/resumo rápido no PR com as mudanças adicionais.
+## Progresso desta PR (atualização)
+
+- [~] P1 — Reduzir duplicação de relatório no pipeline: `_render_report_and_end` já unifica e é usado tanto em texto quanto arquivo; validações adicionais de campos presentes nos dois fluxos permanecem como melhoria de teste.
+- [ ] P2 — Observabilidade discreta no handler: ainda pendente adicionar `logger.debug` em `_handle_provider_errors`.
+- [ ] P2 — Normalização de DOI: ainda pendente remover espaços internos ao compor URL de DOI.
+- [ ] P1 — Cobertura de pipeline (não-verbose/report): adicionar testes específicos para cobertura das linhas faltantes em `pipeline.py`.
+- [ ] P1 — Testes de ConfigManager: ampliar cobertura de precedência (local→global→env) e segurança.
+ 
 
 ## Sequenciamento sugerido
 

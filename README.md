@@ -41,9 +41,6 @@ cat ./hippo-out/manifest/manifest.json
 LLM engine usage:
 
 ```bash
-# Install LLM optional dependencies once
-uv sync --extra llm
-
 # Provide secrets via keyring (preferred)
 uv run hippo set api.openai.key='sk-...'
 uv run hippo set api.gemini.key='...'       # or export GOOGLE_API_KEY
@@ -71,6 +68,26 @@ Engine flags (overrides):
 --retries INT              Retry attempts for LLM calls
 ```
 
+### LangGraph engine (experimental)
+
+The graph orchestrator runs a minimal flow (classify → extract → consolidate) that can be enabled via `--engine llm-graph`. It reuses the LLM configuration (provider/model/etc.) and falls back to heuristics when exceptions occur.
+
+Enable and run:
+
+```bash
+# Use the graph-backed extractor (UI shows mode=llm)
+uv run hippo collect --engine llm-graph -t "See Fuster (2003) https://example.com" -o ./hippo-out
+
+# Verbose mode displays phases and aggregated timings
+uv run hippo collect --engine llm-graph -f ./document.txt -o ./hippo-out --verbose
+```
+
+Notes:
+
+- In this mode, the pipeline uses an adapter that calls `GraphOrchestrator`, while preserving the CLI output/report.
+- The final report includes provider/model and tokens when the underlying LLM path runs; heuristics are used as safe fallback.
+- Metrics are aggregated by the graph and surfaced as `total_latency_ms` and `total_tokens` internally.
+
 ### Config provenance (verbose)
 
 In verbose mode, the CLI shows where each engine parameter came from:
@@ -84,7 +101,7 @@ Format: `key(source)=value` where `source` is one of `cli`, `local`, `global`, o
 
 ### LLM metrics
 
-When using `--engine llm`, the report displays provider/model and token usage; latency may also be shown when available:
+When using `--engine llm` (or `llm-graph`), the report displays provider/model and token usage; latency may also be shown when available:
 
 ```text
 📊 Collect Report
@@ -97,6 +114,39 @@ When using `--engine llm`, the report displays provider/model and token usage; l
 • Tokens: prompt=260, completion=71
 • LLM Latency: 10281 ms
 ```
+
+### Prompts & Templates
+
+Prompts are versioned under `core/resources/prompts/`:
+
+- `extract_references_en.md`
+- `classify_reference_type_en.md`
+- `consolidate_manifest_en.md`
+
+Templates used by the CLI live under `core/resources/templates/`.
+
+### Engine Flags (Graph)
+
+Exemplo com grafo e flags específicas:
+
+```bash
+uv run hippo collect --engine llm-graph -t "See Fuster (2003)" -o ./hippo-out \
+  --graph-timeout 60 --graph-retries 2 \
+  --graph-backoff-base 0.1 --graph-backoff-max 2.0 --graph-jitter 0.05
+```
+
+### Graph Config (flags/env)
+
+The graph path supports basic configuration via environment variables (defaults shown):
+
+- `HIPPO_GRAPH_FALLBACK=1` controls heuristic fallback on errors/timeouts (1/0)
+- `HIPPO_GRAPH_TIMEOUT_S=60` per-node timeout (seconds)
+- `HIPPO_GRAPH_RETRIES=0` number of retry attempts (integer)
+- `HIPPO_GRAPH_BACKOFF_BASE_S=0.1`, `HIPPO_GRAPH_BACKOFF_MAX_S=2.0`, `HIPPO_GRAPH_JITTER_S=0.05`
+
+Note: quando `--engine llm-graph` é usado, overrides do engine no CLI (`--provider`, `--model`, `--base-url`, etc.) são respeitados pelo extrator LLM subjacente. O relatório final exibe provider/model do passo LLM quando aplicável e mostra "Graph Total"/"Graph Tokens" como métricas agregadas.
+
+Retry/backoff: ambos os caminhos (LLM direto e grafo) utilizam política centralizada de retries com backoff exponencial e jitter por padrão.
 
 Make targets:
 
