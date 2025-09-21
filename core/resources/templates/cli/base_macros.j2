@@ -19,7 +19,7 @@ summary={{ mode }} | urls={{ url_count }} | citations={{ citation_count }} | tot
 end={{ mode }} | manifest_id={{ manifest_id }} | urls={{ url_count }} | citations={{ citation_count }} | total_refs={{ total_refs }} | processed_at={{ processed_at }} | total_latency_ms={{ latency_ms }}
 {%- endmacro %}
 
-{% macro report(mode, url_count, citation_count, total_refs, total_ms, manifest_id, processed_friendly, provider=None, model=None, tokens=None, llm_latency_ms=None) -%}
+{% macro report(mode, url_count, citation_count, total_refs, total_ms, manifest_id, processed_friendly, provider=None, model=None, tokens=None, llm_latency_ms=None, graph_total_ms=None, graph_tokens=None) -%}
 📊 Collect Report
 • Mode: {{ mode }}
 • URLs: {{ url_count }} | Citations: {{ citation_count }} | Total: {{ total_refs }}
@@ -34,6 +34,12 @@ end={{ mode }} | manifest_id={{ manifest_id }} | urls={{ url_count }} | citation
 {% endif %}
 {% if llm_latency_ms is not none %}
 • LLM Latency: {{ llm_latency_ms }} ms
+{% endif %}
+{% if graph_total_ms is not none %}
+• Graph Total: {{ graph_total_ms }} ms
+{% endif %}
+{% if graph_tokens %}
+• Graph Tokens: prompt={{ graph_tokens.prompt or 0 }}, completion={{ graph_tokens.completion or 0 }}
 {% endif %}
 {%- endmacro %}
 

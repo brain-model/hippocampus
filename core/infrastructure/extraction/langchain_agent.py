@@ -7,6 +7,13 @@ from typing import Any, Dict, Optional
 
 from core.domain.interfaces import ExtractionAgent
 from core.infrastructure.config.manager import ConfigManager
+from core.reliability.retry import (
+    DEFAULT_BACKOFF_BASE_S,
+    DEFAULT_BACKOFF_MAX_S,
+    DEFAULT_JITTER_S,
+    is_permanent_error,
+    retry_call,
+)
 
 
 @dataclass
@@ -453,26 +460,36 @@ class LangChainExtractionAgent(ExtractionAgent):
         self, model: Any, prompt: str, retries: int = 0
     ) -> tuple[str, Dict[str, int] | None]:
         attempts = max(1, retries + 1)
-        last_err: Exception | None = None
-        for _ in range(attempts):
-            try:
-                invoke = getattr(model, "invoke", None)
-                if callable(invoke):
-                    out = invoke(prompt)
-                    content = (
-                        getattr(out, "content", None)
-                        or getattr(out, "text", None)
-                        or str(out)
-                    )
-                    tokens = self._extract_tokens(out)
-                else:
-                    content = model.predict(prompt)
-                    tokens = None
-                return content, tokens
-            except Exception as e:  # noqa: BLE001
-                last_err = e
-        assert last_err is not None
-        raise last_err
+
+        def _invoke_once():
+            invoke = getattr(model, "invoke", None)
+            if callable(invoke):
+                out = invoke(prompt)
+                content = (
+                    getattr(out, "content", None)
+                    or getattr(out, "text", None)
+                    or str(out)
+                )
+                tokens = self._extract_tokens(out)
+            else:
+                content = model.predict(prompt)
+                tokens = None
+            return content, tokens
+
+        def _should_retry(e: Exception) -> bool:
+            if is_permanent_error(e):
+                return False
+            # Retry by default for unknown/transient errors to match existing semantics
+            return True
+
+        return retry_call(
+            _invoke_once,
+            attempts,
+            DEFAULT_BACKOFF_BASE_S,
+            DEFAULT_JITTER_S,
+            DEFAULT_BACKOFF_MAX_S,
+            _should_retry,
+        )
 
     def _extract_tokens(self, msg: Any) -> Dict[str, int] | None:
         # Try LangChain's common metadata fields

@@ -49,7 +49,7 @@ def _print_collect_help_rich() -> None:
     usage = (
         "Usage\n"
         "hippo collect (-t TEXT | -f FILE) [-o OUTPUT]\n"
-        "             [--engine ENGINE] [ENGINE OPTS] [--verbose]\n"
+        "             [--engine ENGINE] [ENGINE OPTS] [--graph-opts] [--verbose]\n"
         "Default output: ./hippo-out"
     )
     summary_panel("Usage", usage)
@@ -59,7 +59,7 @@ def _print_collect_help_rich() -> None:
         "-t, --text TEXT         Input text content\n"
         "-f, --file FILE         Input file path\n"
         "-o, --output DIR        Output directory (default: ./hippo-out)\n"
-        "--engine ENGINE         Selection: heuristic|llm (default: heuristic)\n"
+        "--engine ENGINE         Selection: heuristic|llm|llm-graph (default: heuristic)\n"
         "--provider NAME         LLM provider: openai|gemini|claude|deepseek\n"
         "--model NAME            LLM model name (e.g., gpt-4o-mini)\n"
         "--temperature FLOAT     Sampling temperature (LLM)\n"
@@ -67,7 +67,13 @@ def _print_collect_help_rich() -> None:
         "--timeout-s INT         Request timeout in seconds (LLM)\n"
         "--base-url URL          Base URL for OpenAI-compatible providers\n"
         "--retries INT           Retry attempts for LLM calls\n"
-        "--verbose               Stream step logs (begin/phase) with final report"
+        "--verbose               Stream step logs (begin/phase) with final report\n"
+        "--graph-timeout INT     Graph per-node timeout (seconds)\n"
+        "--graph-retries INT     Graph per-node retry attempts\n"
+        "--no-graph-fallback     Disable heuristic fallback in graph path\n"
+        "--graph-backoff-base FLOAT  Graph retry backoff base seconds (default 0.1)\n"
+        "--graph-backoff-max FLOAT   Graph retry backoff max seconds (default 2.0)\n"
+        "--graph-jitter FLOAT        Graph retry jitter seconds (default 0.05)"
     )
     summary_panel("Options", options)
 
@@ -104,7 +110,7 @@ def _cmd_collect(argv: list[str] | None) -> int:
     parser.add_argument(
         "--engine",
         type=str,
-        choices=("heuristic", "llm"),
+        choices=("heuristic", "llm", "llm-graph"),
         default="heuristic",
         help="Engine selection (default: heuristic)",
     )
@@ -117,6 +123,31 @@ def _cmd_collect(argv: list[str] | None) -> int:
     parser.add_argument("--base-url", type=str, help="OpenAI-compatible base URL")
     parser.add_argument("--retries", type=int, help="Retry attempts for LLM calls")
     parser.add_argument("--verbose", action="store_true", help="Verbose logging")
+    # Graph-specific options
+    parser.add_argument(
+        "--graph-timeout", type=int, dest="graph_timeout",
+        help="Graph per-node timeout seconds",
+    )
+    parser.add_argument(
+        "--graph-retries", type=int, dest="graph_retries",
+        help="Graph per-node retries",
+    )
+    parser.add_argument(
+        "--no-graph-fallback", action="store_true", dest="no_graph_fallback",
+        help="Disable heuristic fallback in graph",
+    )
+    parser.add_argument(
+        "--graph-backoff-base", type=float, dest="graph_backoff_base",
+        help="Graph retry backoff base seconds",
+    )
+    parser.add_argument(
+        "--graph-backoff-max", type=float, dest="graph_backoff_max",
+        help="Graph retry backoff max seconds",
+    )
+    parser.add_argument(
+        "--graph-jitter", type=float, dest="graph_jitter",
+        help="Graph retry jitter seconds",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -133,6 +164,21 @@ def _cmd_collect(argv: list[str] | None) -> int:
             }.items()
             if v is not None
         }
+        # Build GraphConfig if engine is llm-graph
+        graph_cfg = None
+        if args.engine == "llm-graph":
+            from core.noesis.graph.types import GraphConfig
+            graph_cfg = GraphConfig(
+                enabled=True,
+                use_fallback=not bool(args.no_graph_fallback),
+                timeout_s=args.graph_timeout if args.graph_timeout is not None else 60,
+                retries=args.graph_retries if args.graph_retries is not None else 0,
+                backoff_base_s=(
+                    args.graph_backoff_base if args.graph_backoff_base is not None else 0.1
+                ),
+                backoff_max_s=args.graph_backoff_max if args.graph_backoff_max is not None else 2.0,
+                jitter_s=args.graph_jitter if args.graph_jitter is not None else 0.05,
+            )
         if args.file:
             build_manifest_from_file(
                 args.file,
@@ -140,6 +186,7 @@ def _cmd_collect(argv: list[str] | None) -> int:
                 verbose=args.verbose,
                 engine=args.engine,
                 engine_overrides=overrides or None,
+                graph_config=graph_cfg,
             )
         else:
             build_manifest_from_text(
@@ -148,6 +195,7 @@ def _cmd_collect(argv: list[str] | None) -> int:
                 verbose=args.verbose,
                 engine=args.engine,
                 engine_overrides=overrides or None,
+                graph_config=graph_cfg,
             )
     except FileNotFoundError as e:
         print(f"File not found: {e}", file=sys.stderr)
