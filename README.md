@@ -115,6 +115,69 @@ When using `--engine llm` (or `llm-graph`), the report displays provider/model a
 • LLM Latency: 10281 ms
 ```
 
+### DOI Normalization
+
+When references include a DOI, Hippocampus normalizes it before composing the URL:
+
+- Trims leading/trailing whitespace
+- Removes any inner spaces, tabs or newlines
+- If no URL is provided, sets `sourcePath` to `https://doi.org/{doi}`
+
+Examples:
+
+```text
+Input DOI: " 10.1000 / 182 "     → details.doi: "10.1000/182"     → sourcePath: https://doi.org/10.1000/182
+Input DOI: "10.1000/xyz\n 123" → details.doi: "10.1000/xyz123" → sourcePath: https://doi.org/10.1000/xyz123
+```
+
+If `url` is already provided by the extractor, it is preserved as `sourcePath`, while the `details.doi` still gets normalized.
+
+### Manifest Versioning
+
+Hippocampus includes a `manifestVersion` field following SemVer (`x.y.z`). The schema enforces the format and the validator applies compatibility rules:
+
+- Supported range: `>=1.0.0` and `<2.0.0` (major version 1)
+- Invalid format (non `x.y.z`) fails schema validation
+- Incompatible major (e.g., `2.0.0`) fails with a descriptive error
+
+Example errors:
+
+```text
+Manifest validation failed: manifestVersion: incompatible major (requires <2.0.0)
+Manifest validation failed: manifestVersion: must be a string SemVer x.y.z
+```
+
+### LLM Troubleshooting
+
+- As dependências de provedores LLM são obrigatórias (não há extras opcionais). Se ocorrer ImportError sobre `langchain-openai`, `langchain-google-genai` ou `langchain-anthropic`, reinstale o pacote conforme instruções de instalação e verifique o ambiente virtual.
+- Garanta que as chaves estejam configuradas: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY` (ou via `hippo set api.<provider>.key=...`).
+- Timeout/quotas: aumente `engine.timeout_s`, ajuste `engine.retries` e verifique limites do provedor.
+
+### LLM JSON Fallback Behavior
+
+- O agente tenta parsear JSON diretamente. Caso a resposta venha mista (texto + JSON), aplica um fallback para extrair o conteúdo entre o primeiro `{` e o último `}`.
+- Esse comportamento é best-effort e pode falhar com saídas muito irregulares. Para máxima previsibilidade, prefira modelos/configurações que retornem JSON puro e estável.
+
+### Validation & Errors (CLI)
+
+Hippocampus usa um template padronizado para erros na CLI. Exemplos:
+
+Validação do manifest (exemplo ilustrativo):
+
+```text
+❌ Invalid value: Manifest validation failed: <root>: details.journal: required property missing
+💡 Corrija a entrada/configuração e tente novamente.
+```
+
+Arquivo inexistente:
+
+```text
+❌ File not found: [Errno 2] No such file or directory: 'missing.pdf'
+💡 Verifique o caminho e permissões.
+```
+
+Dica: para erros inesperados, use `--verbose` com `collect` para ver o traceback completo.
+
 ### Prompts & Templates
 
 Prompts are versioned under `core/resources/prompts/`:

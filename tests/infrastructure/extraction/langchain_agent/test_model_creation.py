@@ -250,9 +250,7 @@ class TestImportErrors:
         with patch("builtins.__import__", side_effect=ImportError("No module")):
             with pytest.raises(
                 ImportError,
-                match=(
-                    "Install extra 'llm' to use OpenAI-compatible providers"
-                )
+                match=r"Dependência LLM ausente \(OpenAI compat\)"
             ):
                 agent._make_model(cfg, "sk-test")
 
@@ -264,9 +262,7 @@ class TestImportErrors:
         with patch("builtins.__import__", side_effect=ImportError("No module")):
             with pytest.raises(
                 ImportError,
-                match=(
-                    "Install extra 'llm' to use Google Gemini provider"
-                )
+                match=r"Dependência LLM ausente \(Google Gemini\)"
             ):
                 agent._make_model(cfg, "test-key")
 
@@ -278,6 +274,6 @@ class TestImportErrors:
         with patch("builtins.__import__", side_effect=ImportError("No module")):
             with pytest.raises(
                 ImportError,
-                match="Install extra 'llm' to use Anthropic Claude provider"
+                match=r"Dependência LLM ausente \(Anthropic Claude\)"
             ):
                 agent._make_model(cfg, "test-key")

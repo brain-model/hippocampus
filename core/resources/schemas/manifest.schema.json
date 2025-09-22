@@ -13,7 +13,7 @@
     "knowledgeIndex"
   ],
   "properties": {
-    "manifestVersion": { "type": "string" },
+  "manifestVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
     "manifestId": { "type": "string" },
     "processedAt": { "type": "string", "format": "date-time" },
     "status": { "type": "string", "enum": ["Awaiting Consolidation"] },
@@ -58,7 +58,168 @@
         "sourceFormat": { "type": "string" },
         "sourcePath": { "type": "string" },
         "details": { "type": "object" }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "referenceType": { "const": "web_link" } },
+            "required": ["referenceType"]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": { "type": "string" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "year": { "type": ["integer", "string"] },
+                  "venue": { "type": "string" },
+                  "doi": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "referenceType": { "const": "in_text_citation" } },
+            "required": ["referenceType"]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "author": { "type": "string" },
+                  "year": { "type": ["integer", "string"] },
+                  "title": { "type": "string" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "venue": { "type": "string" },
+                  "doi": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "referenceType": { "const": "article" } }, "required": ["referenceType"] },
+          "then": {
+            "properties": {
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": { "type": "string" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "year": { "type": ["integer", "string"] },
+                  "journal": { "type": "string" },
+                  "volume": { "type": ["integer", "string"] },
+                  "number": { "type": ["integer", "string"] },
+                  "pages": { "type": "string" },
+                  "doi": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "referenceType": { "const": "book" } }, "required": ["referenceType"] },
+          "then": {
+            "properties": {
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": { "type": "string" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "year": { "type": ["integer", "string"] },
+                  "publisher": { "type": "string" },
+                  "isbn": { "type": "string" },
+                  "edition": { "type": ["integer", "string"] },
+                  "doi": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "referenceType": { "const": "website" } }, "required": ["referenceType"] },
+          "then": {
+            "properties": {
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": { "type": "string" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "year": { "type": ["integer", "string"] },
+                  "site_name": { "type": "string" },
+                  "doi": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "referenceType": { "const": "thesis" } }, "required": ["referenceType"] },
+          "then": {
+            "properties": {
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": { "type": "string" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "year": { "type": ["integer", "string"] },
+                  "university": { "type": "string" },
+                  "degree": { "type": "string" },
+                  "doi": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "referenceType": { "const": "conference" } }, "required": ["referenceType"] },
+          "then": {
+            "properties": {
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": { "type": "string" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "year": { "type": ["integer", "string"] },
+                  "conference": { "type": "string" },
+                  "location": { "type": "string" },
+                  "pages": { "type": "string" },
+                  "doi": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "referenceType": { "const": "unknown" } }, "required": ["referenceType"] },
+          "then": {
+            "properties": {
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": { "type": "string" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "year": { "type": ["integer", "string"] },
+                  "venue": { "type": "string" },
+                  "doi": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

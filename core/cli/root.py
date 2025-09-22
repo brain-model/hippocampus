@@ -198,15 +198,36 @@ def _cmd_collect(argv: list[str] | None) -> int:
                 graph_config=graph_cfg,
             )
     except FileNotFoundError as e:
-        print(f"File not found: {e}", file=sys.stderr)
+        print(
+            render_template(
+                _TPL_ERROR,
+                title=f"File not found: {e}",
+                hint="Verifique o caminho e permissões.",
+            ),
+            file=sys.stderr,
+        )
         return 1
     except ValueError as e:
-        print(f"Invalid value: {e}", file=sys.stderr)
+        print(
+            render_template(
+                _TPL_ERROR,
+                title=f"Invalid value: {e}",
+                hint="Corrija a entrada/configuração e tente novamente.",
+            ),
+            file=sys.stderr,
+        )
         return 1
     except Exception as e:  # noqa: BLE001
         if args.verbose:
             raise
-        print(f"error: {e}", file=sys.stderr)
+        print(
+            render_template(
+                _TPL_ERROR,
+                title=f"error: {e}",
+                hint="Use --verbose para ver o traceback.",
+            ),
+            file=sys.stderr,
+        )
         return 1
     return 0
 

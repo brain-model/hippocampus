@@ -6,19 +6,27 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-09-22
+
 ### Changed
 
 - Confiabilidade centralizada: retry/backoff exponencial com jitter movido para `core/reliability/` e aplicado tanto no caminho `llm` quanto no `llm-graph`.
 - Compatibilidade Python: requisito atualizado para `>=3.11`.
 - Empacotamento: dependências antes opcionais passaram a ser obrigatórias no primeiro release (extras removidos do `pyproject.toml`).
+- Validação: mensagens determinísticas no validador (ordenação estável e `<root>` para caminho vazio); CLI padroniza mensagens de erro via template Jinja.
+- Schema: `manifestVersion` agora exige SemVer `x.y.z` e `status` restrito; `details` polimórfico por `referenceType` com `additionalProperties: false`.
 
 ### Added
 
 - Testes de retry no caminho `llm` validando sucesso após falhas transitórias e não‑retry em erros permanentes.
+- Normalização de DOI: remoção de espaços internos/quebras e composição de URL `https://doi.org/{doi}` quando ausente.
+- Testes: validação de versão do manifesto (válida, inválida, incompatível); integração do pipeline cobrindo multi‑tipos e falha quando `details` não corresponde ao tipo.
 
-### Docs
+### Docs (0.6.0)
 
 - README atualizado com exemplo de flags do grafo (`--graph-timeout`, `--graph-retries`, backoff/jitter) e nota sobre precedência de configs no grafo.
+- README atualizado com seções de DOI Normalization e Manifest Versioning.
+- README atualizado com seção de Validation & Errors (CLI) incluindo exemplos de mensagens padronizadas renderizadas pelo template `error.j2`.
 
 ## [0.5.0] - 2025-09-20
 
@@ -92,7 +100,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Packaging via `pyproject.toml` with console script `hippocampus`.
 - Initial tests and CI setup groundwork.
 
-[Unreleased]: https://example.com/compare/0.4.0...HEAD
+[Unreleased]: https://example.com/compare/0.6.0...HEAD
+[0.6.0]: https://example.com/compare/0.5.0...0.6.0
 [0.4.0]: https://example.com/compare/0.3.0...0.4.0
 [0.3.0]: https://example.com/compare/0.2.0...0.3.0
 [0.2.0]: https://example.com/compare/0.1.0...0.2.0
