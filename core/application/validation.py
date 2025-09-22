@@ -12,6 +12,13 @@ from pathlib import Path
 from jsonschema import Draft7Validator
 
 
+def _parse_semver(ver: str) -> tuple[int, int, int]:
+    parts = ver.split(".")
+    if len(parts) != 3 or not all(p.isdigit() for p in parts):
+        raise ValueError(f"Invalid SemVer: {ver}")
+    return tuple(int(p) for p in parts)  # type: ignore[return-value]
+
+
 def validate_manifest(manifest: dict, schema_path: str) -> None:
     """Validate a manifest against a Draft-07 JSON Schema.
 
@@ -28,7 +35,37 @@ def validate_manifest(manifest: dict, schema_path: str) -> None:
     """
     schema = json.loads(Path(schema_path).read_text(encoding="utf-8"))
     validator = Draft7Validator(schema)
-    errors = sorted(validator.iter_errors(manifest), key=lambda e: e.path)
+    errors = sorted(
+        validator.iter_errors(manifest),
+        key=lambda e: (tuple(e.path), getattr(e, "validator", ""), e.message),
+    )
     if errors:
-        msgs = [f"{'/'.join(map(str, e.path))}: {e.message}" for e in errors]
+        def _loc(e: object) -> str:  # type: ignore[no-redef]
+            try:
+                # jsonschema errors expose .path as a deque-like of path components
+                parts = list(getattr(e, "path", []))
+                return "/".join(map(str, parts)) if parts else "<root>"
+            except Exception:
+                return "<root>"
+
+        msgs = [f"{_loc(e)}: {getattr(e, 'message', str(e))}" for e in errors]
         raise ValueError("Manifest validation failed: " + "; ".join(msgs))
+
+    # Compatibility check for manifestVersion: accept >=1.0.0 and <2.0.0
+    mv = manifest.get("manifestVersion")
+    if not isinstance(mv, str):
+        raise ValueError(
+            "Manifest validation failed: manifestVersion: must be a string SemVer x.y.z"
+        )
+    try:
+        major, _minor, _patch = _parse_semver(mv)
+    except ValueError as e:
+        raise ValueError(f"Manifest validation failed: manifestVersion: {e}") from e
+    if major < 1:
+        raise ValueError(
+            "Manifest validation failed: manifestVersion: unsupported (requires >=1.0.0)"
+        )
+    if major >= 2:
+        raise ValueError(
+            "Manifest validation failed: manifestVersion: incompatible major (requires <2.0.0)"
+        )

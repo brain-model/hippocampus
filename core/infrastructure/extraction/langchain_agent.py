@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+import re
 from typing import Any, Dict, Optional
 
 from core.domain.interfaces import ExtractionAgent
@@ -85,7 +86,10 @@ class LangChainExtractionAgent(ExtractionAgent):
         try:
             from langchain_openai import ChatOpenAI  # type: ignore
         except Exception as e:  # pragma: no cover - optional extra
-            raise ImportError("Install extra 'llm' to use OpenAI-compatible providers") from e
+            raise ImportError(
+                "Dependência LLM ausente (OpenAI compat). "
+                "Consulte o README para instalação/empacote."
+            ) from e
 
         base_url = cfg.base_url
         if cfg.provider == "deepseek" and not base_url:
@@ -113,7 +117,10 @@ class LangChainExtractionAgent(ExtractionAgent):
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI  # type: ignore
         except Exception as e:  # pragma: no cover - optional extra
-            raise ImportError("Install extra 'llm' to use Google Gemini provider") from e
+            raise ImportError(
+                "Dependência LLM ausente (Google Gemini). "
+                "Consulte o README para instalação/empacote."
+            ) from e
 
         api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         if not api_key:
@@ -136,7 +143,10 @@ class LangChainExtractionAgent(ExtractionAgent):
         try:
             from langchain_anthropic import ChatAnthropic  # type: ignore
         except Exception as e:  # pragma: no cover - optional extra
-            raise ImportError("Install extra 'llm' to use Anthropic Claude provider") from e
+            raise ImportError(
+                "Dependência LLM ausente (Anthropic Claude). "
+                "Consulte o README para instalação/empacote."
+            ) from e
 
         api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
@@ -212,6 +222,9 @@ class LangChainExtractionAgent(ExtractionAgent):
     def _handle_provider_errors(self, e, provider: Optional[str] = None):
         if isinstance(e, TimeoutError):
             # Preserve native timeout semantics expected by callers/tests
+            raise e
+        # Propagate explicit argument/usage errors without wrapping
+        if isinstance(e, ValueError):
             raise e
         # Prefer checks/fallbacks for the current provider when known
         if provider == "openai":
@@ -391,10 +404,12 @@ class LangChainExtractionAgent(ExtractionAgent):
         venue = r.get("venue")
         url = r.get("url")
         doi = r.get("doi")
+        if doi is not None:
+            # normalize DOI: trim and remove inner whitespace/newlines
+            doi = re.sub(r"\s+", "", str(doi).strip())
         citation = r.get("citation") or r.get("text")
 
         if not url and doi:
-            doi = str(doi).strip()
             url = f"https://doi.org/{doi}"
 
         details: Dict[str, Any] = {}
@@ -439,6 +454,8 @@ class LangChainExtractionAgent(ExtractionAgent):
             "claude": "ANTHROPIC_API_KEY",
             "deepseek": "DEEPSEEK_API_KEY",
         }
+        if provider not in env_map:
+            raise ValueError(f"unsupported provider: {provider}")
         return os.environ.get(env_map[provider])
 
     def _resolve_retries(self, cfg: LLMConfig) -> int:
