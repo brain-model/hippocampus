@@ -79,8 +79,7 @@ def test_resolver_overrides_behavior(tmp_path, monkeypatch):
     local_config.set("engine.temperature", 0.2)
     local_config.set("engine.max_tokens", 64)
     merged, prov = resolve_engine_config(
-        overrides={"temperature": 0.3, "timeout_s": 30},
-        scopes=("local", "global")
+        overrides={"temperature": 0.3, "timeout_s": 30}, scopes=("local", "global")
     )
     assert merged["model"] == "gpt-4o-mini"
     assert prov["model"] == "global"

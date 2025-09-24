@@ -5,7 +5,16 @@ Knowledge acquisition pipelines with Clean Architecture.
 - Source: `core/`
 - Resources: `core/resources/prompts`, `core/resources/templates`
 - Schemas: `core/resources/schemas/manifest.schema.json`
-- CLI: `hippo` (or `hippocampus` for compatibility)
+- CLI: `hippo`
+
+## Contribuição
+
+Confira o guia de contribuição em [CONTRIBUTING.md](CONTRIBUTING.md) para setup de desenvolvimento, padrões e fluxo de PRs.
+
+## Documentação
+
+- Documentação de Usuário (MkDocs/Material): [site público](https://maicondevs.github.io/hippocampus/)
+- Documentação Técnica (neste repositório): veja a pasta `docs/` começando por [`docs/design_doc.md`](docs/design_doc.md) e [`docs/TODO.md`](docs/TODO.md).
 
 ## Install & Setup
 
@@ -33,9 +42,9 @@ Run collection from text or file:
 
 ```bash
 uv run hippo collect -h
-uv run hippo collect -t "See Fuster (2003). https://doi.org/10.1126/science.1893226" -o ./hippo-out
-uv run hippo collect -f document.pdf -o ./hippo-out
-cat ./hippo-out/manifest/manifest.json
+uv run hippo collect -t "See Fuster (2003). https://doi.org/10.1126/science.1893226"
+uv run hippo collect -f document.pdf
+ls ~/.brain-model/hippocampus/buffer/consolidation/manifest/
 ```
 
 LLM engine usage:
@@ -48,10 +57,10 @@ uv run hippo set api.claude.key='...'       # or export ANTHROPIC_API_KEY
 uv run hippo set api.deepseek.key='...'     # or export DEEPSEEK_API_KEY
 
 # Run with LLM engine (examples)
-uv run hippo collect --engine llm --provider openai  --model gpt-4o-mini       -t "Fuster 2003" -o ./hippo-out
-uv run hippo collect --engine llm --provider gemini  --model gemini-1.5-flash  -t "Fuster 2003" -o ./hippo-out
-uv run hippo collect --engine llm --provider claude  --model claude-3-5-sonnet -t "Fuster 2003" -o ./hippo-out
-uv run hippo collect --engine llm --provider deepseek --model deepseek-chat     -t "Fuster 2003" -o ./hippo-out \
+uv run hippo collect --engine llm --provider openai  --model gpt-4o-mini       -t "Fuster 2003"
+uv run hippo collect --engine llm --provider gemini  --model gemini-1.5-flash  -t "Fuster 2003"
+uv run hippo collect --engine llm --provider claude  --model claude-3-5-sonnet -t "Fuster 2003"
+uv run hippo collect --engine llm --provider deepseek --model deepseek-chat     -t "Fuster 2003" \
   --base-url https://api.deepseek.com/v1
 ```
 
@@ -76,10 +85,10 @@ Enable and run:
 
 ```bash
 # Use the graph-backed extractor (UI shows mode=llm)
-uv run hippo collect --engine llm-graph -t "See Fuster (2003) https://example.com" -o ./hippo-out
+uv run hippo collect --engine llm-graph -t "See Fuster (2003) https://example.com"
 
 # Verbose mode displays phases and aggregated timings
-uv run hippo collect --engine llm-graph -f ./document.txt -o ./hippo-out --verbose
+uv run hippo collect --engine llm-graph -f ./document.txt --verbose
 ```
 
 Notes:
@@ -153,6 +162,21 @@ Manifest validation failed: manifestVersion: must be a string SemVer x.y.z
 - Garanta que as chaves estejam configuradas: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY` (ou via `hippo set api.<provider>.key=...`).
 - Timeout/quotas: aumente `engine.timeout_s`, ajuste `engine.retries` e verifique limites do provedor.
 
+### Verbose & Tracing
+
+Use `--verbose` para exibir fases, tempos e um relatório final com métricas. Para rastrear detalhes internos do motor de IA/grafo, habilite as variáveis:
+
+```bash
+export HIPPO_TRACE_LLM=true     # detalha métricas do LLM
+export HIPPO_TRACE_GRAPH=true   # detalha métricas do grafo
+uv run hippo collect --engine llm -t "See Fuster (2003)" --verbose
+```
+
+Notas:
+
+- `--verbose` imprime sumário renderizado (UI com rich) ao final e logs em texto durante as fases.
+- Traces nunca mostram segredos: chaves são mascaradas automaticamente.
+
 ### LLM JSON Fallback Behavior
 
 - O agente tenta parsear JSON diretamente. Caso a resposta venha mista (texto + JSON), aplica um fallback para extrair o conteúdo entre o primeiro `{` e o último `}`.
@@ -193,7 +217,7 @@ Templates used by the CLI live under `core/resources/templates/`.
 Exemplo com grafo e flags específicas:
 
 ```bash
-uv run hippo collect --engine llm-graph -t "See Fuster (2003)" -o ./hippo-out \
+uv run hippo collect --engine llm-graph -t "See Fuster (2003)" \
   --graph-timeout 60 --graph-retries 2 \
   --graph-backoff-base 0.1 --graph-backoff-max 2.0 --graph-jitter 0.05
 ```
@@ -214,8 +238,13 @@ Retry/backoff: ambos os caminhos (LLM direto e grafo) utilizam política central
 Make targets:
 
 ```bash
-make run ARGS='collect -t "See ..." -o ./hippo-out'   # uses python -m core.cli.root
-make hippo ARGS='collect -t "See ..." -o ./hippo-out' # uses hippo command (via uv)
+make run ARGS='collect -t "See ..."'   # uses python -m core.cli.root
+make hippo ARGS='collect -t "See ..."' # uses hippo command (via uv)
+
+Note sobre saída padrão:
+- Sem `-o`, os arquivos são gravados em `~/.brain-model/hippocampus/buffer/consolidation/manifest/`.
+- Cada execução gera um arquivo único no formato `manifest_YYYYMMDD_<id5>.json`.
+- Se `-o DIR` for informado, o arquivo será `DIR/manifest/manifest.json`.
 make hippo-install                                     # install CLI globally (~/.local/bin)
 ```
 

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import time
 
 from core.infrastructure.extraction.langchain_agent import LangChainExtractionAgent
@@ -20,9 +21,9 @@ class FlakyModel:
         if self.calls <= self._fail_times:
             # Simula erro transitório
             ex = TimeoutError("simulated timeout")
-            setattr(ex, "status_code", 503)
+            ex.status_code = 503
             raise ex
-        return DummyMsg("{\n\t\"references\": []\n}")
+        return DummyMsg('{\n\t"references": []\n}')
 
 
 def test_retries_with_backoff_succeeds(monkeypatch):
@@ -58,7 +59,7 @@ def test_no_retry_on_permanent_error(monkeypatch):
         pass
 
     err = PermError("invalid api key")
-    setattr(err, "status_code", 401)
+    err.status_code = 401
 
     class BadModel:
         def invoke(self, prompt: str):

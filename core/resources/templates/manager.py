@@ -15,7 +15,7 @@ _TEMPLATES_DIR = Path(__file__).parent
 
 _env = Environment(
     loader=FileSystemLoader(str(_TEMPLATES_DIR)),
-    autoescape=False,
+    autoescape=False,  # nosec B701 - Templates generate YAML/JSON, not HTML
     undefined=StrictUndefined,
     trim_blocks=True,
     lstrip_blocks=True,

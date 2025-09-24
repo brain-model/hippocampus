@@ -1,6 +1,7 @@
 import os
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 from core.infrastructure.extraction.langchain_agent import LangChainExtractionAgent
 
@@ -60,7 +61,9 @@ class TestRetryLogic:
         mock_response.content = "test content"
         model.invoke.return_value = mock_response
 
-        with patch.object(agent, "_extract_tokens", return_value={"prompt": 10, "completion": 5}):
+        with patch.object(
+            agent, "_extract_tokens", return_value={"prompt": 10, "completion": 5}
+        ):
             content, tokens = agent._call_with_retries(model, "test prompt", retries=3)
 
             assert content == "test content"
@@ -78,7 +81,7 @@ class TestRetryLogic:
         model.invoke.side_effect = [
             RuntimeError("Network error"),
             TimeoutError("Request timeout"),
-            mock_response
+            mock_response,
         ]
 
         with patch.object(agent, "_extract_tokens", return_value=None):
@@ -139,10 +142,7 @@ class TestTokenExtraction:
         agent = LangChainExtractionAgent()
 
         msg = Mock()
-        msg.usage_metadata = {
-            "input_tokens": 50,
-            "output_tokens": 30
-        }
+        msg.usage_metadata = {"input_tokens": 50, "output_tokens": 30}
 
         result = agent._extract_tokens(msg)
 
@@ -154,10 +154,7 @@ class TestTokenExtraction:
         msg = Mock()
         msg.usage_metadata = None
         msg.response_metadata = {
-            "token_usage": {
-                "prompt_tokens": 100,
-                "completion_tokens": 75
-            }
+            "token_usage": {"prompt_tokens": 100, "completion_tokens": 75}
         }
 
         result = agent._extract_tokens(msg)
@@ -168,10 +165,7 @@ class TestTokenExtraction:
         agent = LangChainExtractionAgent()
 
         msg = Mock()
-        msg.usage_metadata = {
-            "prompt_tokens": 25,
-            "completion_tokens": 15
-        }
+        msg.usage_metadata = {"prompt_tokens": 25, "completion_tokens": 15}
 
         result = agent._extract_tokens(msg)
 

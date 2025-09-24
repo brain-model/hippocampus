@@ -3,10 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from core.application.pipeline import (
-    build_manifest_from_file,
-    build_manifest_from_text,
-)
+from core.application.pipeline import build_manifest_from_file, build_manifest_from_text
 
 
 @pytest.fixture()

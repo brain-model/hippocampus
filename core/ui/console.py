@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Dict, Iterator, List, Tuple
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import (BarColumn, Progress, SpinnerColumn, TextColumn,
-                           TimeElapsedColumn)
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeElapsedColumn,
+)
 from rich.rule import Rule
 
 _console = Console()
@@ -38,7 +43,7 @@ def summary_panel(title: str, body: str) -> None:
 
 
 @contextmanager
-def progress_bar(task_names: List[str]) -> Iterator[Tuple[Progress, Dict[str, int]]]:
+def progress_bar(task_names: list[str]) -> Iterator[tuple[Progress, dict[str, int]]]:
     columns = (
         SpinnerColumn(style="cyan"),
         TextColumn("{task.description}"),
@@ -46,7 +51,7 @@ def progress_bar(task_names: List[str]) -> Iterator[Tuple[Progress, Dict[str, in
         TimeElapsedColumn(),
     )
     with Progress(*columns, transient=False) as prog:
-        tasks: Dict[str, int] = {}
+        tasks: dict[str, int] = {}
         for name in task_names:
             tasks[name] = prog.add_task(name, total=1)
         yield prog, tasks

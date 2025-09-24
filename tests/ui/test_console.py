@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from core.ui.console import friendly_ts, progress_bar, line, summary_panel, rule, banner
+from core.ui.console import banner, friendly_ts, line, progress_bar, rule, summary_panel
 
 
 def test_console_helpers_cover_branches():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     # iso com timezone
     s1 = friendly_ts(now.isoformat())
     assert "UTC" in s1

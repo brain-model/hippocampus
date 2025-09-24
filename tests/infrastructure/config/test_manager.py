@@ -20,14 +20,17 @@ def test_manager_basic_get_set(tmp_path, monkeypatch):
 def test_manager_apply_yaml_valid(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     p = Path("valid.yaml")
-    p.write_text("""
+    p.write_text(
+        """
 engine:
   provider: openai
   model: gpt-4o-mini
 api:
   openai:
     key: sk-test
-    """.strip(), encoding="utf-8")
+    """.strip(),
+        encoding="utf-8",
+    )
     mgr = ConfigManager("local")
     mgr.apply_yaml(str(p))
     assert mgr.get("engine.provider") == "openai"
@@ -78,10 +81,15 @@ def test_apply_yaml_invalid_engine_and_api(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     mgr = ConfigManager("local")
     p = Path("bad2.yaml")
-    p.write_text(json.dumps({
-        "engine": {"unsupported": 1, "provider": "nope"},
-        "api": {"badprov": {"extra": 1}}
-    }), encoding="utf-8")
+    p.write_text(
+        json.dumps(
+            {
+                "engine": {"unsupported": 1, "provider": "nope"},
+                "api": {"badprov": {"extra": 1}},
+            }
+        ),
+        encoding="utf-8",
+    )
     with pytest.raises(ValueError):
         mgr.apply_yaml(str(p))
 
@@ -139,10 +147,13 @@ def test_merge_nested_dicts_on_apply(tmp_path, monkeypatch):
     mgr = ConfigManager("local")
     mgr.set("engine.provider", "openai")
     p = Path("merge.yaml")
-    p.write_text("""
+    p.write_text(
+        """
 engine:
   model: gpt-4o-mini
-    """.strip(), encoding="utf-8")
+    """.strip(),
+        encoding="utf-8",
+    )
     mgr.apply_yaml(str(p))
     # deve preservar provider e adicionar model
     assert mgr.get("engine.provider") == "openai"

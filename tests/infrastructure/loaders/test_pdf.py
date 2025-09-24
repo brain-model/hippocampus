@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from __future__ import annotations
+import sys
+import types
 
 from core.infrastructure.loaders.pdf import PdfLoader
 from core.infrastructure.loaders.registry import get_loader_for_file
-import types
-import sys
 
 
 def test_registry_selects_pdf_loader():
@@ -50,8 +49,8 @@ def test_pdf_loader_param_validation():
 
 
 def test_pdf_loader_skips_page_errors(monkeypatch, tmp_path):
-    import types
     import sys
+    import types
 
     fake_pypdf = types.ModuleType("pypdf")
 

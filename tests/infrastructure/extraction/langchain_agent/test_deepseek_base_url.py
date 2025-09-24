@@ -1,15 +1,17 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from core.infrastructure.extraction.langchain_agent import LangChainExtractionAgent
 import core.infrastructure.config.manager as cfg_manager
+from core.infrastructure.extraction.langchain_agent import LangChainExtractionAgent
 
 
 class DummyMsg:
-    def __init__(self, text="{\"references\": []}"):
+    def __init__(self, text='{"references": []}'):
         self.text = text
-        self.response_metadata = {"token_usage": {"prompt_tokens": 1, "completion_tokens": 1}}
+        self.response_metadata = {
+            "token_usage": {"prompt_tokens": 1, "completion_tokens": 1}
+        }
 
 
 @pytest.fixture(autouse=True)
@@ -33,9 +35,13 @@ def test_deepseek_uses_base_url_and_env_key(monkeypatch):
         def invoke(self, prompt):
             return DummyMsg()
 
-    with patch.dict("sys.modules", {"langchain_openai": MagicMock(ChatOpenAI=FakeChatOpenAI)}):
+    with patch.dict(
+        "sys.modules", {"langchain_openai": MagicMock(ChatOpenAI=FakeChatOpenAI)}
+    ):
         # Ensure ConfigManager does not return any stored secret so env var is used
-        monkeypatch.setattr(cfg_manager.ConfigManager, "get_secret", lambda self, provider: None)
+        monkeypatch.setattr(
+            cfg_manager.ConfigManager, "get_secret", lambda self, provider: None
+        )
         agent = LangChainExtractionAgent(
             cfg_override={"provider": "deepseek", "model": "deepseek-chat"}
         )

@@ -1,0 +1,30 @@
+site_name: Hippocampus
+site_description: CLI para aquisição de conhecimento e geração de manifestos
+site_url: https://brain-model.github.io/hippocampus/
+docs_dir: docs-user
+theme:
+  name: material
+  language: pt-BR
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.tracking
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
+nav:
+  - Início: index.md
+  - Instalação: installation.md
+  - Uso Rápido: usage.md
+  - CLI: cli.md
+  - Configuração: configuration.md
+  - Solução de Problemas: troubleshooting.md
+plugins:
+  - search

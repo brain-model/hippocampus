@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from core.application.pipeline import build_manifest_from_text, build_manifest_from_file
+from core.application.pipeline import build_manifest_from_file, build_manifest_from_text
 from core.infrastructure.extraction.heuristic import HeuristicExtractionAgent
 
 
@@ -36,6 +36,7 @@ def test_pipeline_basic_file_input(tmp_path):
 
 # === TESTES AVANÇADOS DE FUNCIONALIDADES CORE ===
 
+
 def test_file_pipeline_detailed_logging(tmp_path, monkeypatch):
     """Testa logs detalhados no pipeline de arquivo"""
     monkeypatch.chdir(tmp_path)
@@ -54,7 +55,7 @@ def test_file_pipeline_detailed_logging(tmp_path, monkeypatch):
                         "rawString": "https://example.com",
                         "sourceFormat": "web_content",
                         "sourcePath": "https://example.com",
-                        "details": {}
+                        "details": {},
                     },
                     {
                         "id": 2,
@@ -62,20 +63,17 @@ def test_file_pipeline_detailed_logging(tmp_path, monkeypatch):
                         "rawString": "Smith (2023)",
                         "sourceFormat": "text",
                         "sourcePath": "",
-                        "details": {}
-                    }
+                        "details": {},
+                    },
                 ]
             }
 
     monkeypatch.setattr(
-        "core.application.pipeline.HeuristicExtractionAgent",
-        lambda: DummyAgent()
+        "core.application.pipeline.HeuristicExtractionAgent", lambda: DummyAgent()
     )
 
     result = build_manifest_from_file(
-        str(test_file), str(tmp_path),
-        engine="heuristic",
-        verbose=False
+        str(test_file), str(tmp_path), engine="heuristic", verbose=False
     )
 
     # Verificar que o pipeline executou com sucesso
@@ -87,8 +85,7 @@ def test_manifest_id_and_timestamp_generation(tmp_path, monkeypatch):
     """Testa geração de ID único e timestamp do manifesto"""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(
-        HeuristicExtractionAgent, "extract",
-        lambda self, text: {"references": []}
+        HeuristicExtractionAgent, "extract", lambda self, text: {"references": []}
     )
 
     # Executar duas vezes para verificar IDs únicos
@@ -103,8 +100,9 @@ def test_manifest_id_and_timestamp_generation(tmp_path, monkeypatch):
     assert "processedAt" in result1
     assert "processedAt" in result2
     from datetime import datetime
+
     # Verificar formato ISO
-    datetime.fromisoformat(result1["processedAt"].replace('Z', '+00:00'))
+    datetime.fromisoformat(result1["processedAt"].replace("Z", "+00:00"))
 
 
 def test_file_format_detection_edge_cases(tmp_path, monkeypatch):
@@ -124,7 +122,7 @@ def test_file_format_detection_edge_cases(tmp_path, monkeypatch):
     with patch("core.application.pipeline.line") as mock_line:
         monkeypatch.setattr(
             "core.infrastructure.extraction.heuristic.HeuristicExtractionAgent",
-            lambda: DummyAgent()
+            lambda: DummyAgent(),
         )
 
         build_manifest_from_file(str(test_file), str(tmp_path))

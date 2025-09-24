@@ -42,7 +42,7 @@ def test_pipeline_integration_multitype_valid(monkeypatch, tmp_path):
 
 
 def test_pipeline_integration_invalid_details_fails(monkeypatch, tmp_path):
-    """Pipeline deve falhar quando details contém campos proibidos pelo schema do tipo."""
+    """Pipeline deve falhar quando details contém campos proibidos pelo schema."""
 
     class BadAgent:
         def extract(self, text: str):

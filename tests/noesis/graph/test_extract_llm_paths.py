@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import types
+
 import pytest
 
 from core.noesis.graph.nodes import extract as node_extract
@@ -39,7 +40,9 @@ class _FakeAgentRaises:
 def _install_fake_agent(monkeypatch, cls):
     fake_mod = types.ModuleType("core.infrastructure.extraction.langchain_agent")
     fake_mod.LangChainExtractionAgent = cls
-    monkeypatch.setitem(sys.modules, "core.infrastructure.extraction.langchain_agent", fake_mod)
+    monkeypatch.setitem(
+        sys.modules, "core.infrastructure.extraction.langchain_agent", fake_mod
+    )
 
     fake_resolver = types.ModuleType("core.infrastructure.config.resolver")
 
@@ -47,7 +50,9 @@ def _install_fake_agent(monkeypatch, cls):
         return {}, {}
 
     fake_resolver.resolve_engine_config = _fake_resolve_engine_config
-    monkeypatch.setitem(sys.modules, "core.infrastructure.config.resolver", fake_resolver)
+    monkeypatch.setitem(
+        sys.modules, "core.infrastructure.config.resolver", fake_resolver
+    )
 
 
 class _FakeAgentRetryThenOK:

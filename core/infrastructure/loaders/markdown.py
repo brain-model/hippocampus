@@ -43,8 +43,7 @@ class MarkdownLoader:
         s = self.CODE_FENCE_RE.sub("", s)
         s = self.HEADER_RE.sub("", s)
         s = self.LINK_RE.sub(r"\1 (\2)", s)
-        s = s.replace("*", "").replace("_", "")
-        return s
+        return s.replace("*", "").replace("_", "")
 
     def _normalize(self, s: str) -> str:
         return "\n".join(line.rstrip() for line in s.splitlines()).strip()

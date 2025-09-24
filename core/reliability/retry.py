@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import random
 import time
-from typing import Any, Callable, Dict, Tuple
+from collections.abc import Callable
+from typing import Any
 
 # Defaults centralizados para backoff
 DEFAULT_BACKOFF_BASE_S = 0.1
@@ -27,14 +28,20 @@ def _extract_status_code(err: Exception) -> int | None:
     return None
 
 
+# HTTP status code constants for retry logic
+HTTP_TOO_MANY_REQUESTS = 429
+HTTP_SERVER_ERROR_START = 500
+HTTP_SERVER_ERROR_END = 600
+
+
 def is_transient_error(err: Exception) -> bool:
     name = type(err).__name__
     msg = str(err).lower()
     status = _extract_status_code(err)
     if status is not None:
-        if status == 429:
+        if status == HTTP_TOO_MANY_REQUESTS:
             return True
-        if 500 <= status < 600:
+        if HTTP_SERVER_ERROR_START <= status < HTTP_SERVER_ERROR_END:
             return True
     if isinstance(err, TimeoutError):
         return True
@@ -49,7 +56,7 @@ def is_transient_error(err: Exception) -> bool:
     }
     if name in transient_names:
         return True
-    if (
+    return (
         "rate limit" in msg
         or "quota" in msg
         or "exceeded" in msg
@@ -58,9 +65,7 @@ def is_transient_error(err: Exception) -> bool:
         or "connection" in msg
         or "temporar" in msg  # temporary/temporarily
         or "reset by peer" in msg
-    ):
-        return True
-    return False
+    )
 
 
 def is_permanent_error(err: Exception) -> bool:
@@ -79,19 +84,23 @@ def is_permanent_error(err: Exception) -> bool:
     }
     if name in permanent_names:
         return True
-    if "missing api key" in msg or "invalid api key" in msg or "permission denied" in msg:
-        return True
-    return False
+    return bool(
+        "missing api key" in msg
+        or "invalid api key" in msg
+        or "permission denied" in msg
+    )
 
 
 def compute_backoff_seconds(
     base_s: float, jitter_s: float, max_s: float, attempt_index: int
 ) -> float:
-    return min((base_s * (2 ** attempt_index)) + random.uniform(0, jitter_s), max_s)
+    return min((base_s * (2**attempt_index)) + random.uniform(0, jitter_s), max_s)
 
 
 def retry_call(
-    func: Callable[[], Tuple[Any, Dict[str, int] | None, int | None, Dict[str, str] | None] | Any],
+    func: Callable[
+        [], tuple[Any, dict[str, int] | None, int | None, dict[str, str] | None] | Any
+    ],
     attempts: int,
     base_s: float,
     jitter_s: float,

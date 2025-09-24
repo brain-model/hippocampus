@@ -5,7 +5,9 @@ import json
 from core.application.pipeline import build_manifest_from_text
 
 
-def test_report_and_end_are_printed_text_mode_verbose_false(tmp_path, monkeypatch, capsys):
+def test_report_and_end_are_printed_text_mode_verbose_false(
+    tmp_path, monkeypatch, capsys
+):
     printed = []
 
     def fake_line(s: str) -> None:
@@ -24,7 +26,9 @@ def test_report_and_end_are_printed_text_mode_verbose_false(tmp_path, monkeypatc
     )
     assert "knowledgeIndex" in manifest
 
-    assert any("manifest_id" in s for s in printed) or any("manifestId" in s for s in printed)
+    assert any("manifest_id" in s for s in printed) or any(
+        "manifestId" in s for s in printed
+    )
     assert any("total_refs" in s or "Total refs" in s for s in printed)
 
     mf_path = out_dir / "manifest" / "manifest.json"

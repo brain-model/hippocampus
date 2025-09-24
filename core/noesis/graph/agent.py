@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
-from .types import GraphConfig, NodeResult
 from .nodes import classify as node_classify
-from .nodes import extract as node_extract
 from .nodes import consolidate as node_consolidate
+from .nodes import extract as node_extract
+from .types import GraphConfig, NodeResult
 
 
 class GraphOrchestrator:
     def __init__(self, cfg: GraphConfig | None = None) -> None:
         self.cfg = cfg or GraphConfig()
 
-    def run(self, text: str) -> Dict[str, Any]:
+    def run(self, text: str) -> dict[str, Any]:
         # Minimal stub flow: classify -> extract -> consolidate
         cls = self._node_classify(text)
         ext = self._node_extract(text, cls)
         out = self._node_consolidate(cls, ext)
 
-        def _m(n: NodeResult) -> Dict[str, Any]:
+        def _m(n: NodeResult) -> dict[str, Any]:
             return n.get("metrics", {}) if isinstance(n, dict) else {}
 
-        def _tok(n: Dict[str, Any]) -> Dict[str, int]:
+        def _tok(n: dict[str, Any]) -> dict[str, int]:
             t = n.get("tokens") if isinstance(n, dict) else None
             return t or {"prompt": 0, "completion": 0}
 
@@ -71,5 +71,5 @@ class GraphOrchestrator:
     def _node_extract(self, _text: str, _prev: NodeResult) -> NodeResult:
         return node_extract.run(_text, _prev, self.cfg)
 
-    def _node_consolidate(self, _cls: NodeResult, ext: NodeResult) -> Dict[str, Any]:
+    def _node_consolidate(self, _cls: NodeResult, ext: NodeResult) -> dict[str, Any]:
         return node_consolidate.run(_cls, ext)

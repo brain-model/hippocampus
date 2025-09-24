@@ -7,7 +7,7 @@ producing manifest-compatible reference entries.
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 URL_RE = re.compile(r"https?://\S+")
 CITATION_RE = re.compile(r"([A-Z][A-Za-z\-]+)\s*\((\d{4})\)")
@@ -20,7 +20,7 @@ class HeuristicExtractionAgent:
     generates reference entries compatible with the manifest schema.
     """
 
-    def extract(self, text: str) -> Dict[str, Any]:
+    def extract(self, text: str) -> dict[str, Any]:
         """Extract references from normalized text.
 
         Args:
@@ -30,7 +30,7 @@ class HeuristicExtractionAgent:
             A dictionary with key `references` containing the detected
             references (URLs and in-text citations).
         """
-        references: List[Dict[str, Any]] = []
+        references: list[dict[str, Any]] = []
 
         for idx, url in enumerate(URL_RE.findall(text), start=1):
             references.append(

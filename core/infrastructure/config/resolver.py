@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from .manager import ConfigManager
 
 
 def resolve_engine_config(
-    overrides: Dict[str, Any] | None = None,
+    overrides: dict[str, Any] | None = None,
     scopes: tuple[str, ...] = ("local", "global"),
-) -> tuple[Dict[str, Any], Dict[str, str]]:
+) -> tuple[dict[str, Any], dict[str, str]]:
     """Resolve engine configuration with precedence and provenance.
 
     Precedence: CLI overrides > local > global. Applies a default for provider
     when absent ("openai"). Returns merged config and a provenance map per key.
     """
-    merged: Dict[str, Any] = {}
-    provenance: Dict[str, str] = {}
+    merged: dict[str, Any] = {}
+    provenance: dict[str, str] = {}
 
     # Merge strategy: first-write-wins entre escopos de config
     # Ordem de merge: local -> global (valores já definidos não são sobrescritos)
@@ -34,8 +34,8 @@ def resolve_engine_config(
 
 
 def _merge_scope(
-    merged: Dict[str, Any],
-    provenance: Dict[str, str],
+    merged: dict[str, Any],
+    provenance: dict[str, str],
     scopes: tuple[str, ...],
     scope: str,
 ) -> None:
@@ -52,7 +52,7 @@ def _merge_scope(
 
 
 def _apply_overrides(
-    merged: Dict[str, Any], provenance: Dict[str, str], overrides: Dict[str, Any]
+    merged: dict[str, Any], provenance: dict[str, str], overrides: dict[str, Any]
 ) -> None:
     for k, v in overrides.items():
         if v is None:

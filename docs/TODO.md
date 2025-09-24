@@ -16,7 +16,7 @@ Este arquivo consolida o plano de implementação e o backlog de tarefas por fas
 5. LangGraph/LLM: orquestrador mínimo, biblioteca de prompts, reuso da configuração da Fase 4 e fallback heurístico.
 6. Validação Robusta: `manifest.schema.json`, validação polimórfica de `details`, versionamento `manifestVersion`.
 7. DX/Observabilidade: logging estruturado, `--verbose`, traces opcionais, CI (lint+test).
-8. Empacotamento/Docs: extras `llm`/`pdf`, distribuição, docs de instalação/uso.
+8. Empacotamento/Docs: distribuição e documentação de instalação/uso (instalação completa, sem extras).
 
 ## Critérios de Aceite (gerais por fase)
 
@@ -28,17 +28,22 @@ Este arquivo consolida o plano de implementação e o backlog de tarefas por fas
 
 > Nota: Itens incrementais de melhorias mapeadas a cada novo PR a partir do primeiro na fase # (prioridades P0/P1/P2) estão detalhados em `docs/BACKLOG.md`.
 
+Atualização 2025-09-24:
+
+- Concluídas as correções P0/P1 do MR #4: URLs do projeto atualizadas, actions fixadas por SHA em CI/Release, padronização do `python -m pip` no release.
+- Pendências remanescentes foram mantidas apenas no `docs/BACKLOG.md` (cobertura adicional do validador, heurística de extração JSON, consistência de idioma, secret scan aprimorado e cache opcional de CI).
+
 ### Fase 1 — Foundation/Scaffold
 
 1) [x] Remover `hippocampus/main.py` e preparar Commit 0 (somente não-.py) com mensagem: primeira frase do Frankenstein (original).
 2) [x] Criar diretórios `prompts/` e `templates/` (adicionar `.keep`/`README.md`).
-3) [x] Configurar `pyproject.toml` com `[project].name = "hippocampus"`, script `hippocampus = core.cli.root:main`, wheel `[tool.hatch.build.targets.wheel].packages = ["core"]`.
+3) [x] Configurar `pyproject.toml` com `[project].name = "hippocampus"`, script `hippo = core.cli.root:main`, wheel `[tool.hatch.build.targets.wheel].packages = ["core"]`.
 4) [x] Adicionar `[project.optional-dependencies]` para `llm` e `pdf` (runtime mínimo vazio).
 5) [x] Adicionar `manifest.schema.json` (versão inicial) alinhado ao design.
 6) [x] Reorganizar assets: `resources/prompts`, `resources/templates` e `resources/schemas/manifest.schema.json`.
 7) [x] Testes unitários e lint do repositório base com cobertura >= 90% (focando validação de schema e carga de config).
 
-Status: Concluída em 2025-09-18 via COMMIT #d59781c: You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings.
+Status: ✅ CONCLUÍDO — 2025-09-18 • via COMMIT #d59781c: You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings.
 
 ### Fase 2 — MVP (Texto)
 
@@ -60,7 +65,7 @@ Status: Concluída em 2025-09-18 via COMMIT #d59781c: You will rejoice to hear t
 - Integração: `application/pipeline` (gera `manifest.json` válido) e `cli/root` (parse/exit codes/output).
 - Cobertura: rodar com `uvx --from pytest-cov pytest --cov=core --cov-report=term-missing`.
 
-Status: Concluída em 2025-09-18 via COMMIT #7f75932: feat(core,tests): MVP step 2 — manifest pipeline with heuristic extraction and JSON Schema validation; add CLI and tests (>=90% coverage)
+Status: ✅ CONCLUÍDO — 2025-09-18 • via COMMIT #7f75932: feat(core,tests) MVP step 2 — manifest pipeline with heuristic extraction and JSON Schema validation; add CLI and tests (>=90% coverage)
 
 ### Fase 3 — Multiformato
 
@@ -73,7 +78,7 @@ Status: Concluída em 2025-09-18 via COMMIT #7f75932: feat(core,tests): MVP step
 5) [x] Habilitar `--file` no CLI com seleção automática de loader por extensão e testes de integração.
 6) [x] Testes unitários dos loaders e registry com cobertura >= 90%.
 
-Status: Concluída em 2025-09-18 via COMMIT #b766904: feat(loaders,cli,tests): Fase 3 — suporte multiformato (Markdown, PDF, LaTeX), registry de loaders, habilitar --file e cobertura 100%
+Status: ✅ CONCLUÍDO — 2025-09-18 • via COMMIT #b766904: feat(loaders,cli,tests) Fase 3 — multiformato (Markdown, PDF, LaTeX), registry, --file e cobertura 100%
 
 ### Fase 4 — LLM Multi‑provider & Configurações
 
@@ -110,7 +115,7 @@ Status: Concluída em 2025-09-18 via COMMIT #b766904: feat(loaders,cli,tests): F
    - [x] Testes do config manager (local/global, keyring fallback via integração, merge/reset YAML, mascaramento) — coberto em integração/subcomando.
    - [x] Cobertura >= 95% (alvo 100% nos módulos novos); lint/format OK.
 
-Status: Concluída em 2025-09-20 via PR #1 (`feature/llm-multiprovider-config`).
+Status: ✅ CONCLUÍDO — 2025-09-20 • via PR #1 (feature/llm-multiprovider-config): LLM multi‑provider & config integrados.
 
 ### Fase 5 — LangGraph/LLM
 
@@ -168,7 +173,7 @@ Status: Concluída em 2025-09-20 via PR #1 (`feature/llm-multiprovider-config`).
 1) [x] QA gate (lint+tests)
    - Acceptance: gate ≥ 90% e checks verdes.
 
-Status: Concluída em 2025-09-20 via PR #2 (`feature/langgraph-orchestrator`).
+Status: ✅ CONCLUÍDO • 2025-09-20 • via PR #2 (feature/langgraph-orchestrator): LangGraph orquestrador mínimo integrado.
 
 ### Fase 6 — Validação Robusta
 
@@ -179,7 +184,7 @@ Status: Concluída em 2025-09-20 via PR #2 (`feature/langgraph-orchestrator`).
    - [x] Definir campos obrigatórios mínimos por tipo (mantido permissivo nesta etapa, sem obrigatórios rígidos para não quebrar heurística).
    - [x] Acceptance: manifests com `details` incoerentes ao tipo falham com erro claro de validação para os tipos suportados.
 
-   Status: Concluída em 2025-09-22 via COMMITS #6ffc5ea (schema base) e últimos commits para tipos adicionais e testes: validação polimórfica de `details` para `web_link`, `in_text_citation`, `article`, `book`, `website`, `thesis`, `conference` e `unknown`, com `additionalProperties:false` e casos de teste.
+   Status: ✅ CONCLUÍDO — 2025-09-22 • via COMMITS #6ffc5ea, ...: validação polimórfica de `details` (web_link, in_text_citation, article, book, website, thesis, conference, unknown) com `additionalProperties:false` e casos de teste.
 
 2) [x] Versão e compatibilidade do manifesto
    - [x] Formalizar `manifestVersion` (SemVer `x.y.z`) no schema e no domínio.
@@ -187,7 +192,7 @@ Status: Concluída em 2025-09-20 via PR #2 (`feature/langgraph-orchestrator`).
    - [x] Preencher `manifestVersion` no pipeline/CLI e propagar a usuários em relatórios.
    - [x] Acceptance: manifests sem versão válida ou incompatíveis resultam em erro descritivo e exit code != 0.
 
-   Status: Concluída em 2025-09-22 via COMMIT #d5bf2b2: feat(validation): impor SemVer em manifestVersion e compat >=1.0.0,<2.0.0; test(validation): cobrir versão ausente/inválida/incompatível
+   Status: ✅ CONCLUÍDO — 2025-09-22 • via COMMIT #d5bf2b2: feat(validation) impor SemVer em manifestVersion e compat >=1.0.0,<2.0.0; tests para versão ausente/inválida/incompatível
 
 3) [x] Validador e integração no pipeline/CLI
    - [x] `core/application/validation.py`: carregar e aplicar schema polimórfico; mensagens determinísticas (ordenação estável e `<root>` para caminho vazio).
@@ -200,7 +205,7 @@ Status: Concluída em 2025-09-20 via PR #2 (`feature/langgraph-orchestrator`).
    - [x] Atualizar testes cobrindo DOIs com espaços/quebras; documentar comportamento no README.
    - [x] Acceptance: URLs de DOI não contêm espaços; testes e docs atualizados.
 
-   Status: Concluída em 2025-09-22 via COMMIT #48e2579: feat(normalization): normalizar DOI (strip + remoção de espaços internos) e montar URL quando ausente; test: cobrir normalização de DOI
+   Status: ✅ CONCLUÍDO — 2025-09-22 • via COMMIT #48e2579: feat(normalization) normalizar DOI (strip + remoção de espaços) e montar URL quando ausente; tests de normalização
 
 5) [x] Testes (unidade e integração)
    - [x] Unidade: casos happy/erro por `web_link` e `in_text_citation` (polimorfismo de `details`).
@@ -209,27 +214,139 @@ Status: Concluída em 2025-09-20 via PR #2 (`feature/langgraph-orchestrator`).
    - [x] Cobertura alvo: ≥ 90% nos módulos alterados (atingida: 94.04%).
    - [x] Acceptance: suíte passa com cobertura mínima atingida.
 
-   Status: Concluída em 2025-09-22 via COMMITS #06bda45 (CLI integração validação), #48e2579 (DOI normalização + testes), e #118aa5d: testes de integração do pipeline cobrindo multi‑tipos e falha por `details` incompatível; suíte completa com 241 passed e cobertura ≥ 90%.
+   Status: ✅ CONCLUÍDO — 2025-09-22 • via COMMITS #06bda45, #48e2579, #118aa5d: integração CLI+validação; normalização de DOI; e2e multi‑tipos; 241 passed; cobertura ≥ 90%.
 
 6) [x] Documentação e QA gate
    - [x] Atualizar `CHANGELOG.md` (marcar `BREAKING` se necessário) e `README.md` (seção `manifestVersion` e DOI).
    - [x] Garantir lint+tests verdes (gate) após as mudanças.
    - [x] Acceptance: docs publicadas e pipeline de qualidade aprovado.
 
-   Status: Concluída em 2025-09-22 via COMMITS #9240212 (README DOI), #118aa5d (README Manifest Versioning), #118aa5d (CHANGELOG Unreleased). Gate de testes verificado localmente (241 passed).
+   Status: ✅ CONCLUÍDO — 2025-09-22 • via COMMITS #9240212, #118aa5d: README (DOI e Manifest Versioning) e CHANGELOG (Unreleased); gate de testes OK (241 passed).
 
 ### Fase 7 — DX/Observabilidade
 
-1) [ ] Logging estruturado (`rich`/`loguru`) e `--verbose`; mapear erros para códigos de saída.
-2) [ ] Habilitar traces de LLM/graph controlados por env; mascarar segredos em logs.
-3) [ ] Qualidade de código: ruff/black e CI (lint+test).
-4) [ ] Testes unitários dos utilitários de logging/observabilidade com cobertura >= 90%.
+1) **Logging Estruturado e Observabilidade**
+   - [x] Adicionar dependência `rich` para logging estruturado e UI aprimorada.
+   - [x] Implementar `core/infrastructure/logging/structured.py` com logger configurável (console/file/json).
+   - [x] Integrar logs estruturados em `_handle_provider_errors` com `provider` e `type(e).__name__` (sem vazar segredos).
+   - [x] Mapear tipos de erro para códigos de saída específicos no CLI (`core/cli/exit_codes.py`).
+
+   Status: ✅ CONCLUÍDO — 2025-09-22 • via PR #3 (feature/dx-observability): logging estruturado integrado e mapeamento de exit codes no CLI.
+
+2) **Verbose Mode e Traces**
+   - [x] Melhorar `--verbose` no CLI com informações estruturadas via `rich.console`.
+   - [x] Habilitar traces de LLM/graph controlados por env vars (`HIPPO_TRACE_LLM=true`, `HIPPO_TRACE_GRAPH=true`).
+   - [x] Mascarar segredos (API keys) em logs e traces automaticamente.
+   - [x] Adicionar métricas detalhadas no modo verbose (tokens, latência por nó, retries).
+
+   Status: ✅ CONCLUÍDO — 2025-09-22 • via PR #3 (feature/dx-observability): verbose aprimorado; `HIPPO_TRACE_LLM/HIPPO_TRACE_GRAPH`; métricas detalhadas.
+
+3) **Qualidade de Código e Tooling**
+   - [x] Configurar `ruff` para linting/formatting (substituir/complementar ferramentas atuais).
+   - [x] Configurar `black` para formatação de código consistente.
+   - [x] Adicionar `pyproject.toml` seções `[tool.ruff]` e `[tool.black]` com regras do projeto.
+   - [x] Setup de pre-commit hooks para linting automático.
+   - [x] Refatoração de código para resolver violações de qualidade (complexidade cognitiva, line length, etc.).
+   - [x] Correção de problemas de segurança detectados pelo bandit.
+
+   Status: ✅ CONCLUÍDO — 2025-09-22 • via PR #3 (feature/dx-observability): ruff/black/pre-commit configurados; ajustes de qualidade aplicados.
+
+4) **CI/CD e Automação**
+   - [x] Configurar GitHub Actions para lint+test automático em PRs.
+   - [x] Adicionar workflow de release automático com tags semânticas.
+   - [x] Setup de coverage reporting automático (codecov/coveralls).
+   - [x] Validação automática de CHANGELOG em PRs.
+   - Acceptance: CI verde, releases automáticos, coverage tracking.
+
+   Status: ✅ CONCLUÍDO — 2025-09-22 • via PR #3 (feature/dx-observability): CI multi-stage (lint/test/build/release), Codecov integrado, validação de CHANGELOG.
+
+5) **Melhorias de UX no CLI**
+   - [x] Emitir sumário renderizado no modo verbose (corrigir chamada morta em `build_manifest_from_text`).
+   - [x] Unificar relatório no pipeline de arquivo (reutilizar `_render_report_and_end` com métricas LLM).
+   - [x] Adicionar progress bars para operações longas (LLM/Graph).
+   - [x] Melhorar mensagens de erro com sugestões de correção.
+   - Acceptance: UX consistente, relatórios unificados, feedback visual.
+
+   Status: ✅ CONCLUÍDO — 2025-09-23 • via COMMIT #1c98c80: feat(cli) dicas acionáveis; relatório unificado; verbose sumário; refatoração de complexidade
+
+6) **Cobertura e Testes de Qualidade**
+   - [x] Expandir testes para casos edge de `manifestVersion` (majors `<1` e `>=2`).
+   - [x] Testes unitários dos utilitários de logging/observabilidade.
+   - [x] Testes de integração do pipeline com logging estruturado.
+   - [x] Validar cobertura >= 90% dos novos módulos de observabilidade.
+   - Acceptance: cobertura mantida, novos módulos testados, edge cases cobertos.
+
+7) **Documentação de DX**
+   - [x] Atualizar README com seção de troubleshooting e logs.
+   - [x] Documentar variáveis de ambiente para traces e debugging.
+   - [x] Guia de contribuição com setup de desenvolvimento e tooling.
+   - [x] Exemplos de uso do modo verbose e traces.
+   - Acceptance: docs completas, exemplos executáveis, guia de dev clear.
+
+   Status: ✅ CONCLUÍDO — 2025-09-22 • via COMMITS #e16654a, #3e7d72a, #d27a126: README (Verbose & Tracing), CONTRIBUTING, e TODO atualizados.
+
+8) **QA Gate e Integração**
+   - [x] Executar `make lint && make test` com novas ferramentas.
+   - [ ] Validar performance sem regressões (benchmarks básicos).
+   - [x] Revisar logs em cenários reais (mock providers, timeouts, erros) — verificados no modo `--verbose` durante smoke local.
+   - [x] CHANGELOG 0.7.0 com features de observabilidade.
+   - Acceptance: gate ≥ 90%, sem regressões, docs atualizadas.
 
 ### Fase 8 — Empacotamento/Docs
 
-1) [ ] Configurar extras (`llm`, `pdf`) e gerar wheel; validar instalação local do CLI.
-2) [ ] Atualizar documentação com matriz de recursos por extras e instruções de instalação/execução.
-3) [ ] Testes unitários de empacotamento (import/entrypoints) com cobertura >= 90%.
+1) [x] Empacotamento completo (sem extras)
+   - [x] Consolidar dependências em `[project].dependencies` (instalação completa sempre)
+   - [x] Incluir `core/**` no wheel/sdist (CLI, schemas, prompts, templates)
+   - [x] Validar wheel inclui `core/cli/root.py` e `resources/*`
+   - Estado: Dependências consolidadas; `force-include` do schema e `tool.hatch.build.include = ["core/**"]` aplicados. Wheel inspecionado com sucesso.
+
+2) [x] CI: build + smoke install
+   - [x] Build de artefatos (wheel + sdist)
+   - [x] Smoke install + `hippo --help`
+   - [x] Smoke heurístico: `hippo collect -t "..." --engine=heuristic`
+   - [x] Build das docs (MkDocs) no CI
+   - Estado: Validado localmente com `uvx --from ./dist/*.whl hippo --help`, coleta heurística com manifest gerado e `mkdocs build --strict`. Workflows atualizados para smoke e docs.
+
+3) [x] Workflow de Release
+   - [x] Anexar artefatos ao GitHub Release (idempotente, substituição de artefatos)
+   - [x] Publicar no PyPI (condicional por tag)
+   - [x] Release notes a partir do CHANGELOG para a tag
+   - [x] Publicar documentação no GitHub Pages (docs-user)
+   - Estado: `ncipollo/release-action@v1` configurada com `allowUpdates`/`replacesArtifacts`; etapa de PyPI e GH Pages presentes. Release notes automáticos a partir do CHANGELOG ainda a configurar se desejado.
+
+4) [x] Testes de empacotamento
+   - [x] Entry point (`hippo`) resolve e exibe `--help`
+   - [x] Recursos acessíveis via import (`core/resources/*` empacotados)
+   - [x] Versão do pacote confere com `pyproject.toml`
+   - Estado: OK via `uvx --from dist/*.whl hippo --help`; inspeção do wheel confirma resources e CLI; versão 0.7.0.
+
+5) [x] Documentação de instalação
+   - README: seção única de instalação (pip/uv), sem matriz de extras
+   - Requisitos: Python >= 3.11
+
+6) [x] Metadados do pacote
+   - [x] Campo `license` em `[project]`
+   - [x] `classifiers` adequados
+   - [x] `project-urls` com Homepage/Repository/Documentation
+   - Estado: License adicionado (proprietário), classifiers e URLs concluídos.
+
+7) [x] Bump versão + CHANGELOG
+   - Atualizar para `0.7.0` com notas de Observabilidade, UX do CLI, Empacotamento
+   - Validar com `make validate-changelog`
+
+8) [x] Build local e validação
+   - `make build`; instalar wheel em venv temporária; `hippo --help` e `collect` heurístico
+   - Estado: Sucesso com `uvx --from build pyproject-build` e smoke via `uvx`.
+
+9) [x] Documentação (Usuário vs Técnica)
+    - Usuário (MkDocs + Material):
+       - Configurar `mkdocs.yml` (tema Material, `docs_dir: docs-user/`) — configurado
+       - Estrutura inicial: `docs-user/index.md` (Getting Started), `installation.md`, `usage.md`, `cli.md`, `configuration.md`, `troubleshooting.md` — criada
+       - Publicação: GitHub Pages via workflow CI; adicionar link "Documentation" em `project.urls` do `pyproject.toml` (aparece no PyPI)
+    - Técnica (interna, no repositório):
+       - Manter em `docs/` (design_doc, BACKLOG, TODO, etc.)
+       - Tornar o `README.md` a porta de entrada, com seção "Documentação Técnica" linkando os artefatos internos
+    - Estado: Build local das docs OK (`mkdocs build --strict`); publicação via workflow configurada.
 
 ## Riscos e Mitigações
 

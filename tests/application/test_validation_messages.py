@@ -14,7 +14,8 @@ def test_schema_error_root_path_and_order(schema_path: str):
     # Deve conter prefixo e usar <root> para caminho vazio
     assert msg.startswith("Manifest validation failed:")
     assert "<root>" in msg
-    # Ordem determinística: sem checar exatamente a ordem, ao menos estável por múltiplas execuções
+    # Ordem determinística: sem checar exatamente a ordem, ao menos estável
+    # por múltiplas execuções
     # (Executar duas vezes e comparar)
     with pytest.raises(ValueError) as ei2:
         validate_manifest(bad, schema_path)

@@ -20,8 +20,12 @@ class FakeModel:
 
 @pytest.fixture(autouse=True)
 def patch_prompt_and_key(monkeypatch):
-    monkeypatch.setattr(LangChainExtractionAgent, "_build_prompt", lambda self, text: "X")
-    monkeypatch.setattr(LangChainExtractionAgent, "_resolve_api_key", lambda self, p: "k")
+    monkeypatch.setattr(
+        LangChainExtractionAgent, "_build_prompt", lambda self, text: "X"
+    )
+    monkeypatch.setattr(
+        LangChainExtractionAgent, "_resolve_api_key", lambda self, p: "k"
+    )
 
 
 def _make_agent_with_exc(exc: Exception) -> LangChainExtractionAgent:
@@ -35,6 +39,7 @@ def test_openai_rate_limit_maps_to_runtimeerror(monkeypatch):
 
     class RateLimitError(Exception):
         pass
+
     openai_mod.RateLimitError = RateLimitError
     with patch.dict("sys.modules", {"openai": openai_mod}):
         agent = _make_agent_with_exc(RateLimitError("limit"))
@@ -49,6 +54,7 @@ def test_openai_auth_error_maps_to_runtimeerror(monkeypatch):
 
     class AuthenticationError(Exception):
         pass
+
     openai_mod.AuthenticationError = AuthenticationError
     with patch.dict("sys.modules", {"openai": openai_mod}):
         agent = _make_agent_with_exc(AuthenticationError("bad key"))
@@ -65,6 +71,7 @@ def test_gemini_permission_denied(monkeypatch):
 
     class PermissionDenied(Exception):
         pass
+
     exc_mod.PermissionDenied = PermissionDenied
     with patch.dict(
         "sys.modules",
@@ -86,6 +93,7 @@ def test_anthropic_auth_error(monkeypatch):
 
     class AuthenticationError(Exception):
         pass
+
     anthropic_mod.AuthenticationError = AuthenticationError
     with patch.dict("sys.modules", {"anthropic": anthropic_mod}):
         agent = LangChainExtractionAgent(cfg_override={"provider": "claude"})

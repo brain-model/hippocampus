@@ -1,0 +1,128 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+
+jobs:
+  changelog-check:
+    runs-on: ubuntu-latest
+    name: Changelog Validation
+
+    steps:
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      with:
+        fetch-depth: 0
+
+    - name: Fetch base branch
+      run: |
+        git fetch origin ${GITHUB_BASE_REF} --depth=1
+
+    - name: Check CHANGELOG.md updated
+      run: |
+        if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "CHANGELOG.md"; then
+          echo "✅ CHANGELOG.md was updated"
+        else
+          echo "❌ CHANGELOG.md was not updated in this PR"
+          echo "Please add an entry describing your changes"
+          exit 1
+        fi
+
+    - name: Validate CHANGELOG format
+      run: |
+        if head -20 CHANGELOG.md | grep -q "## \[Unreleased\]"; then
+          echo "✅ CHANGELOG has proper Unreleased section"
+        else
+          echo "❌ CHANGELOG should have an [Unreleased] section at the top"
+          exit 1
+        fi
+
+    - name: Check for version consistency
+      run: |
+        # Check if version in pyproject.toml matches what's expected
+        PYPROJECT_VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+        echo "Version in pyproject.toml: $PYPROJECT_VERSION"
+
+        # For feature branches, this is informational
+        if [[ "$PYPROJECT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "✅ Version format is valid: $PYPROJECT_VERSION"
+        else
+          echo "⚠️ Version format might need attention: $PYPROJECT_VERSION"
+        fi
+
+  docs-check:
+    runs-on: ubuntu-latest
+    name: Documentation Check
+
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - name: Check critical files exist
+        run: |
+          test -f README.md || (echo "❌ README.md missing"; exit 1)
+          test -f CHANGELOG.md || (echo "❌ CHANGELOG.md missing"; exit 1)
+          test -f pyproject.toml || (echo "❌ pyproject.toml missing"; exit 1)
+          echo "✅ All critical documentation files present"
+
+      - name: Validate README structure
+        run: |
+          grep -q "# hippocampus" README.md || (echo "❌ README missing main title"; exit 1)
+          grep -q "## Installation" README.md || (echo "❌ README missing Installation section"; exit 1)
+          grep -q "## Usage" README.md || (echo "❌ README missing Usage section"; exit 1)
+          echo "✅ README has proper structure"
+
+      - name: Check for TODO markers in code
+        run: |
+          TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX" core/ tests/ --exclude-dir=__pycache__ | wc -l)
+          if [ "$TODO_COUNT" -gt 0 ]; then
+            echo "⚠️ Found $TODO_COUNT TODO/FIXME markers in code:"
+            grep -r "TODO\|FIXME\|XXX" core/ tests/ --exclude-dir=__pycache__ | head -10
+            echo "Consider addressing these before merging"
+          else
+            echo "✅ No TODO markers found in code"
+          fi
+
+  security-check:
+    runs-on: ubuntu-latest
+    name: Security Analysis
+
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a # v4
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: |
+          uv sync --dev
+
+      - name: Run security analysis
+        run: |
+          # Run Bandit once and produce JSON report for artifact
+          uvx bandit -r core/ -f json -o bandit-report.json || true
+          echo "Bandit report saved to bandit-report.json"
+
+      - name: Upload security report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-report-pr
+          path: bandit-report.json
+
+      - name: Check for hardcoded secrets
+        run: |
+          # Simple check for common secret patterns
+          if grep -r "password\|secret\|key" core/ --include="*.py" | grep -E "(=|:)" | grep -v "# " | grep -v test; then
+            echo "⚠️ Potential hardcoded secrets found - please review"
+          else
+            echo "✅ No obvious hardcoded secrets detected"
+          fi

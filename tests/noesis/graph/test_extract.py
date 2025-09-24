@@ -5,7 +5,9 @@ from core.noesis.graph.types import GraphConfig
 
 
 def test_extract_stub_returns_empty_extractions_and_metrics_dict():
-    prev = {"classifications": [{"kind": "web_link", "confidence": 0.9, "span": "http://x"}]}
+    prev = {
+        "classifications": [{"kind": "web_link", "confidence": 0.9, "span": "http://x"}]
+    }
     out = node_extract.run("some text", prev, GraphConfig(enabled=False))
     assert isinstance(out, dict)
     assert out.get("extractions") == []

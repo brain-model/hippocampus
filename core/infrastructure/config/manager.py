@@ -6,14 +6,18 @@ available, falling back to on-disk storage with restricted permissions.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 _SECRET_KEY_RE = re.compile(r"^api\.(openai|gemini|claude|deepseek)\.key$")
 _SUPPORTED_PROVIDERS = {"openai", "gemini", "claude", "deepseek"}
+# Constants for configuration validation
+CONFIG_KEY_PARTS_COUNT = 2
+
 _SUPPORTED_ENGINE_KEYS = {
     "provider",
     "model",
@@ -28,22 +32,18 @@ _SUPPORTED_ENGINE_KEYS = {
 def _ensure_parent_permissions(p: Path) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
     if os.name == "posix":
-        try:
+        with contextlib.suppress(Exception):
             os.chmod(p.parent, 0o700)
-        except Exception:
-            pass
 
 
-def _write_secure_json(p: Path, data: Dict[str, Any]) -> None:
+def _write_secure_json(p: Path, data: dict[str, Any]) -> None:
     _ensure_parent_permissions(p)
     tmp = p.with_suffix(p.suffix + ".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(p)
     if os.name == "posix":
-        try:
+        with contextlib.suppress(Exception):
             os.chmod(p, 0o600)
-        except Exception:
-            pass
 
 
 class ConfigManager:
@@ -54,7 +54,7 @@ class ConfigManager:
             raise ValueError("scope must be 'local' or 'global'")
         self.scope = scope
         self.path = self._resolve_path(scope)
-        self._cache: Dict[str, Any] | None = None
+        self._cache: dict[str, Any] | None = None
 
     def _resolve_path(self, scope: str) -> Path:
         if scope == "local":
@@ -64,7 +64,7 @@ class ConfigManager:
         return base / "hippocampus" / "config.json"
 
     # Basic load/save
-    def _load(self) -> Dict[str, Any]:
+    def _load(self) -> dict[str, Any]:
         if self._cache is not None:
             return self._cache
         p = self.path
@@ -78,7 +78,7 @@ class ConfigManager:
         self._cache = data
         return data
 
-    def _save(self, data: Dict[str, Any]) -> None:
+    def _save(self, data: dict[str, Any]) -> None:
         self._cache = data
         _write_secure_json(self.path, data)
 
@@ -100,7 +100,9 @@ class ConfigManager:
         # validate engine keys and provider values when applicable
         if key.startswith("engine."):
             parts = key.split(".")
-            if len(parts) != 2 or parts[1] not in _SUPPORTED_ENGINE_KEYS:
+            is_invalid_parts = len(parts) != CONFIG_KEY_PARTS_COUNT
+            is_unsupported_key = parts[1] not in _SUPPORTED_ENGINE_KEYS
+            if is_invalid_parts or is_unsupported_key:
                 raise ValueError(
                     "unsupported engine key; allowed: "
                     + ", ".join(sorted(_SUPPORTED_ENGINE_KEYS))
@@ -182,7 +184,7 @@ class ConfigManager:
     def _validate_engine_section(self, engine_section: Any) -> None:
         if not isinstance(engine_section, dict):
             return
-        for k in engine_section.keys():
+        for k in engine_section:
             if k not in _SUPPORTED_ENGINE_KEYS:
                 raise ValueError(
                     f"unsupported engine key '{k}'; allowed: "
@@ -207,7 +209,7 @@ class ConfigManager:
             if not isinstance(conf, dict):
                 raise ValueError("api.<provider> must be a mapping")
 
-    def _apply_yaml_secrets(self, content: Dict[str, Any]) -> None:
+    def _apply_yaml_secrets(self, content: dict[str, Any]) -> None:
         api = content.get("api", {}) if isinstance(content.get("api", {}), dict) else {}
         for provider, conf in api.items():
             if isinstance(conf, dict):
@@ -215,9 +217,9 @@ class ConfigManager:
                 if key:
                     self.set_secret(provider, str(key))
 
-    def _strip_secret_keys(self, content: Dict[str, Any]) -> Dict[str, Any]:
-        def strip_api(d: Dict[str, Any]) -> Dict[str, Any]:
-            out: Dict[str, Any] = {}
+    def _strip_secret_keys(self, content: dict[str, Any]) -> dict[str, Any]:
+        def strip_api(d: dict[str, Any]) -> dict[str, Any]:
+            out: dict[str, Any] = {}
             for prov, pval in d.items():
                 if isinstance(pval, dict):
                     cp = {k: v for k, v in pval.items() if k != "key"}
@@ -225,7 +227,7 @@ class ConfigManager:
                         out[prov] = cp
             return out
 
-        res: Dict[str, Any] = {}
+        res: dict[str, Any] = {}
         for k, v in content.items():
             if k == "api" and isinstance(v, dict):
                 res["api"] = strip_api(v)
@@ -234,9 +236,9 @@ class ConfigManager:
         return res
 
     def _merge_dicts(
-        self, base: Dict[str, Any], incoming: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        def merge(dst: Dict[str, Any], src: Dict[str, Any]) -> None:
+        self, base: dict[str, Any], incoming: dict[str, Any]
+    ) -> dict[str, Any]:
+        def merge(dst: dict[str, Any], src: dict[str, Any]) -> None:
             for k, v in src.items():
                 if isinstance(v, dict) and isinstance(dst.get(k), dict):
                     merge(dst[k], v)  # type: ignore[index]

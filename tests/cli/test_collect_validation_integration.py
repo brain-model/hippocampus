@@ -14,7 +14,8 @@ def test_collect_invalid_reference_schema_error_template_output(
 
     class BadAgent:
         def extract(self, text: str):
-            # referenceType web_link com details contendo propriedade inesperada -> quebra schema
+            # referenceType web_link com details contendo propriedade inesperada
+            # quebra schema
             return {
                 "references": [
                     {
@@ -73,7 +74,9 @@ def test_collect_file_invalid_reference_schema_error_template_output(
     assert "Manifest validation failed:" in err
 
 
-def test_collect_incompatible_manifest_version_error(tmp_path: Path, monkeypatch, capsys):
+def test_collect_incompatible_manifest_version_error(
+    tmp_path: Path, monkeypatch, capsys
+):
     """CLI collect deve falhar com versões incompatíveis do manifesto (>=2.0.0)."""
 
     # Garante que a extração é válida para isolar o erro de versão
