@@ -67,6 +67,6 @@ Fluxo: `classify → extract → consolidate`.
 Via pipeline/CLI (adaptador mantém UI de `llm`):
 
 ```bash
-uv run hippo collect --engine llm-graph -t "See Fuster (2003) https://example.com" -o ./hippo-out
-uv run hippo collect --engine llm-graph -f ./document.txt -o ./hippo-out --verbose
+uv run hippo collect --engine llm-graph -t "See Fuster (2003) https://example.com"
+uv run hippo collect --engine llm-graph -f ./document.txt --verbose
 ```

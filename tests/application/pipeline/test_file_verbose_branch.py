@@ -21,7 +21,9 @@ def test_file_verbose_branch_executes_and_writes(tmp_path, monkeypatch):
     out_dir = tmp_path / "out"
     out_dir.mkdir()
 
-    manifest = build_manifest_from_file(str(src), str(out_dir), verbose=True, engine="heuristic")
+    manifest = build_manifest_from_file(
+        str(src), str(out_dir), verbose=True, engine="heuristic"
+    )
     assert manifest["sourceDocument"]["sourceType"] == "file"
     mf_path = out_dir / "manifest" / "manifest.json"
     assert mf_path.exists()

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
+
 from core.resources import MANIFEST_SCHEMA_PATH
 
 

@@ -1,0 +1,31 @@
+codecov:
+  require_ci_to_pass: true
+  notify:
+    after_n_builds: 1
+
+comment:
+  layout: "diff,flags,files"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+  hide_project_coverage: false
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: 90%
+        threshold: 1%
+
+flags:
+  py3.11:
+    carryforward: true
+  py3.12:
+    carryforward: true
+  py3.13:
+    carryforward: true

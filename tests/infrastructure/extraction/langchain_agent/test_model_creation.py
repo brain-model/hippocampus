@@ -1,6 +1,7 @@
 import os
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 from core.infrastructure.extraction.langchain_agent import LangChainExtractionAgent
 
@@ -21,7 +22,7 @@ class TestMakeModel:
         cfg.max_tokens = 1000
         cfg.base_url = None
 
-        agent._make_model(cfg, None)
+        agent._make_model(cfg, "sk-test")
 
         mock_chat_openai.assert_called_once_with(
             model="gpt-4",
@@ -29,7 +30,7 @@ class TestMakeModel:
             timeout=30,
             max_tokens=1000,
             base_url=None,
-            api_key="sk-test"
+            api_key="sk-test",
         )
 
     @patch.dict(os.environ, {"DEEPSEEK_API_KEY": "sk-deepseek"})
@@ -44,15 +45,15 @@ class TestMakeModel:
         cfg.max_tokens = None
         cfg.base_url = None
 
-        agent._make_model(cfg, None)
+        agent._make_model(cfg, "sk-deepseek")
 
         mock_chat_openai.assert_called_once_with(
             model="deepseek-chat",
             temperature=0.2,
-            timeout=60,
+            timeout=None,
             max_tokens=None,
             base_url="https://api.deepseek.com/v1",
-            api_key="sk-deepseek"
+            api_key="sk-deepseek",
         )
 
     def test_make_model_unsupported_provider(self):
@@ -73,9 +74,11 @@ class TestMakeModel:
         cfg.max_tokens = 1000
         cfg.base_url = None
 
-        with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises(RuntimeError, match="Missing API key for provider 'openai'"):
-                agent._make_model(cfg, None)
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            pytest.raises(RuntimeError, match="Missing API key for provider 'openai'"),
+        ):
+            agent._make_model(cfg, None)
 
     @patch.dict(os.environ, {"GOOGLE_API_KEY": "test-key"})
     @patch("langchain_google_genai.ChatGoogleGenerativeAI")
@@ -95,7 +98,7 @@ class TestMakeModel:
             temperature=0.3,
             max_output_tokens=2000,
             timeout=45,
-            api_key="test-key"
+            api_key="test-key",
         )
 
     @patch.dict(os.environ, {"ANTHROPIC_API_KEY": "claude-key"})
@@ -116,7 +119,7 @@ class TestMakeModel:
             temperature=0.2,
             max_tokens=None,
             timeout=60.5,
-            api_key="claude-key"
+            api_key="claude-key",
         )
 
 
@@ -136,7 +139,7 @@ class TestTimeoutHandling:
         cfg.max_tokens = 1000
         cfg.base_url = None
 
-        agent._make_model(cfg, None)
+        agent._make_model(cfg, "sk-test")
 
         # Verify timeout was converted to int
         call_args = mock_chat_openai.call_args[1]
@@ -155,7 +158,7 @@ class TestTimeoutHandling:
         cfg.max_tokens = 1000
         cfg.base_url = None
 
-        agent._make_model(cfg, None)
+        agent._make_model(cfg, "sk-test")
 
         # Verify timeout was converted to float
         call_args = mock_chat_openai.call_args[1]
@@ -180,17 +183,20 @@ class TestUpdateLastMetadata:
         # Mock _call_with_retries to return content and tokens
         with patch.object(agent, "_call_with_retries") as mock_call:
             mock_call.return_value = ("test content", 100)
-            with patch.object(agent, "_resolve_retries", return_value=3):
-                with patch.object(agent, "_default_model_for_provider", return_value="gpt-4o-mini"):
+            with (
+                patch.object(agent, "_resolve_retries", return_value=3),
+                patch.object(
+                    agent, "_default_model_for_provider", return_value="gpt-4o-mini"
+                ),
+            ):
+                agent._update_last_metadata(cfg, model, prompt)
 
-                    agent._update_last_metadata(cfg, model, prompt)
-
-                    assert agent._last_content == "test content"
-                    assert agent.last_provider == "openai"
-                    assert agent.last_model == "gpt-4"
-                    assert agent.last_tokens == 100
-                    assert isinstance(agent.last_extract_latency_ms, int)
-                    assert agent.last_extract_latency_ms >= 0
+                assert agent._last_content == "test content"
+                assert agent.last_provider == "openai"
+                assert agent.last_model == "gpt-4"
+                assert agent.last_tokens == 100
+                assert isinstance(agent.last_extract_latency_ms, int)
+                assert agent.last_extract_latency_ms >= 0
 
     def test_update_last_metadata_default_model(self):
         agent = LangChainExtractionAgent()
@@ -204,17 +210,16 @@ class TestUpdateLastMetadata:
 
         with patch.object(agent, "_call_with_retries") as mock_call:
             mock_call.return_value = ("content", 50)
-            with patch.object(agent, "_resolve_retries", return_value=1):
-                with patch.object(
-                    agent,
-                    "_default_model_for_provider",
-                    return_value="deepseek-chat"
-                ) as mock_default:
+            with (
+                patch.object(agent, "_resolve_retries", return_value=1),
+                patch.object(
+                    agent, "_default_model_for_provider", return_value="deepseek-chat"
+                ) as mock_default,
+            ):
+                agent._update_last_metadata(cfg, model, prompt)
 
-                    agent._update_last_metadata(cfg, model, prompt)
-
-                    mock_default.assert_called_once_with("deepseek")
-                    assert agent.last_model == "deepseek-chat"
+                mock_default.assert_called_once_with("deepseek")
+                assert agent.last_model == "deepseek-chat"
 
 
 # === DEFAULT MODEL PROVIDER TESTS ===
@@ -247,33 +252,36 @@ class TestImportErrors:
         cfg = Mock()
         cfg.provider = "openai"
 
-        with patch("builtins.__import__", side_effect=ImportError("No module")):
-            with pytest.raises(
-                ImportError,
-                match=r"Dependência LLM ausente \(OpenAI compat\)"
-            ):
-                agent._make_model(cfg, "sk-test")
+        with (
+            patch("builtins.__import__", side_effect=ImportError("No module")),
+            pytest.raises(
+                ImportError, match=r"Dependência LLM ausente \(OpenAI compat\)"
+            ),
+        ):
+            agent._make_model(cfg, "sk-test")
 
     def test_gemini_import_error(self):
         agent = LangChainExtractionAgent()
         cfg = Mock()
         cfg.provider = "gemini"
 
-        with patch("builtins.__import__", side_effect=ImportError("No module")):
-            with pytest.raises(
-                ImportError,
-                match=r"Dependência LLM ausente \(Google Gemini\)"
-            ):
-                agent._make_model(cfg, "test-key")
+        with (
+            patch("builtins.__import__", side_effect=ImportError("No module")),
+            pytest.raises(
+                ImportError, match=r"Dependência LLM ausente \(Google Gemini\)"
+            ),
+        ):
+            agent._make_model(cfg, "test-key")
 
     def test_claude_import_error(self):
         agent = LangChainExtractionAgent()
         cfg = Mock()
         cfg.provider = "claude"
 
-        with patch("builtins.__import__", side_effect=ImportError("No module")):
-            with pytest.raises(
-                ImportError,
-                match=r"Dependência LLM ausente \(Anthropic Claude\)"
-            ):
-                agent._make_model(cfg, "test-key")
+        with (
+            patch("builtins.__import__", side_effect=ImportError("No module")),
+            pytest.raises(
+                ImportError, match=r"Dependência LLM ausente \(Anthropic Claude\)"
+            ),
+        ):
+            agent._make_model(cfg, "test-key")

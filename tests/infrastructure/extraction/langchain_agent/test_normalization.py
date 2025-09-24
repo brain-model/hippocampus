@@ -8,14 +8,16 @@ class TestNormalizeOutput:
     def test_normalize_output_complete_reference(self):
         agent = LangChainExtractionAgent()
         data = {
-            "references": [{
-                "id": 1,
-                "rawString": "https://example.com",
-                "referenceType": "web_link",
-                "sourceFormat": "web_content",
-                "sourcePath": "https://example.com",
-                "details": {"title": "Example"}
-            }]
+            "references": [
+                {
+                    "id": 1,
+                    "rawString": "https://example.com",
+                    "referenceType": "web_link",
+                    "sourceFormat": "web_content",
+                    "sourcePath": "https://example.com",
+                    "details": {"title": "Example"},
+                }
+            ]
         }
 
         result = agent._normalize_output(data)
@@ -31,13 +33,15 @@ class TestNormalizeOutput:
     def test_normalize_output_legacy_format(self):
         agent = LangChainExtractionAgent()
         data = {
-            "references": [{
-                "title": "Test Paper",
-                "authors": ["Smith, J."],
-                "year": 2023,
-                "url": "https://example.com/paper",
-                "doi": "10.1000/test"
-            }]
+            "references": [
+                {
+                    "title": "Test Paper",
+                    "authors": ["Smith, J."],
+                    "year": 2023,
+                    "url": "https://example.com/paper",
+                    "doi": "10.1000/test",
+                }
+            ]
         }
 
         result = agent._normalize_output(data)
@@ -54,12 +58,7 @@ class TestNormalizeOutput:
 
     def test_normalize_output_doi_without_url(self):
         agent = LangChainExtractionAgent()
-        data = {
-            "references": [{
-                "title": "DOI Paper",
-                "doi": "10.1000/test"
-            }]
-        }
+        data = {"references": [{"title": "DOI Paper", "doi": "10.1000/test"}]}
 
         result = agent._normalize_output(data)
 
@@ -69,11 +68,7 @@ class TestNormalizeOutput:
 
     def test_normalize_output_citation_text(self):
         agent = LangChainExtractionAgent()
-        data = {
-            "references": [{
-                "citation": "Smith, J. (2023). Test paper."
-            }]
-        }
+        data = {"references": [{"citation": "Smith, J. (2023). Test paper."}]}
 
         result = agent._normalize_output(data)
 
@@ -90,7 +85,7 @@ class TestNormalizeOutput:
                 "invalid string reference",  # Should be filtered
                 {"incomplete": "data"},  # Should be filtered
                 None,  # Should be filtered
-                {"title": "Another valid", "citation": "Valid citation"}
+                {"title": "Another valid", "citation": "Valid citation"},
             ]
         }
 
@@ -107,7 +102,7 @@ class TestNormalizeOutput:
         data = {
             "references": [],
             "summary": "Test summary",
-            "metadata": {"key": "value"}
+            "metadata": {"key": "value"},
         }
 
         result = agent._normalize_output(data)
@@ -128,7 +123,7 @@ class TestNormalizeReferenceItem:
             "referenceType": "web_link",
             "sourceFormat": "web_content",
             "sourcePath": "path",
-            "details": {"extra": "data"}
+            "details": {"extra": "data"},
         }
 
         result = agent._normalize_reference_item(ref, 0)
@@ -141,7 +136,7 @@ class TestNormalizeReferenceItem:
             "rawString": "test",
             "referenceType": "web_link",
             "sourceFormat": "web_content",
-            "sourcePath": "path"
+            "sourcePath": "path",
         }
 
         result = agent._normalize_reference_item(ref, 5)
@@ -156,7 +151,7 @@ class TestNormalizeReferenceItem:
             "referenceType": "web_link",
             "sourceFormat": "web_content",
             "sourcePath": "path",
-            "details": None
+            "details": None,
         }
 
         result = agent._normalize_reference_item(ref, 0)
@@ -175,7 +170,7 @@ class TestNormalizeReferenceItem:
         agent = LangChainExtractionAgent()
         ref = {
             "rawString": "test",
-            "referenceType": "web_link"
+            "referenceType": "web_link",
             # Missing sourceFormat, sourcePath, details
         }
 
@@ -189,11 +184,7 @@ class TestNormalizeReferenceItem:
 
     def test_normalize_reference_item_legacy_with_url(self):
         agent = LangChainExtractionAgent()
-        ref = {
-            "title": "Test",
-            "url": "https://test.com",
-            "year": "2023"
-        }
+        ref = {"title": "Test", "url": "https://test.com", "year": "2023"}
 
         result = agent._normalize_reference_item(ref, 2)
 
@@ -207,10 +198,7 @@ class TestNormalizeReferenceItem:
 
     def test_normalize_reference_item_legacy_with_citation(self):
         agent = LangChainExtractionAgent()
-        ref = {
-            "title": "Test Paper",
-            "citation": "Smith et al. (2023)"
-        }
+        ref = {"title": "Test Paper", "citation": "Smith et al. (2023)"}
 
         result = agent._normalize_reference_item(ref, 3)
 
@@ -222,11 +210,7 @@ class TestNormalizeReferenceItem:
 
     def test_normalize_reference_item_legacy_doi_to_url(self):
         agent = LangChainExtractionAgent()
-        ref = {
-            "title": "DOI Paper",
-            "doi": "10.1000/test",
-            "authors": ["Author A"]
-        }
+        ref = {"title": "DOI Paper", "doi": "10.1000/test", "authors": ["Author A"]}
 
         result = agent._normalize_reference_item(ref, 4)
 

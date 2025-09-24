@@ -4,7 +4,6 @@ import pytest
 
 from core.application.validation import validate_manifest
 
-
 BASE = {
     "manifestId": "id",
     "processedAt": "2024-01-01T00:00:00Z",

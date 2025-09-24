@@ -9,15 +9,16 @@ Inclui:
 
 from __future__ import annotations
 
-import pytest
 import sys
 from io import StringIO
 from unittest.mock import patch
 
+import pytest
+
 from core.cli.root import main
 
-
 # === MAIN HELP FUNCTIONALITY ===
+
 
 def test_cli_help_runs():
     """Testa main --help"""
@@ -40,6 +41,7 @@ def test_main_help_long_flag():
 
 # === INVALID COMMANDS AND ERROR HANDLING ===
 
+
 def test_cli_invalid_command():
     """Testa comando inválido (retorna 0 e mostra help)"""
     # O CLI retorna 0 e mostra o help para comando inválido
@@ -52,9 +54,11 @@ def test_main_unknown_command_error_handling(monkeypatch):
     # Redirecionar stdout para capturar saída
     captured_stdout = StringIO()
 
-    with patch.object(sys, 'stdout', captured_stdout):
-        with patch.object(sys, 'argv', ['hippo', 'unknown_command']):
-            result = main()
+    with (
+        patch.object(sys, "stdout", captured_stdout),
+        patch.object(sys, "argv", ["hippo", "unknown_command"]),
+    ):
+        result = main()
 
     # Comando desconhecido mostra help e retorna 0 (não é tratado como erro)
     assert result == 0
@@ -67,18 +71,22 @@ def test_main_unknown_command_error_handling(monkeypatch):
 
 def test_main_exception_handling(monkeypatch):
     """Testa que exceções nos subcomandos propagam normalmente"""
+
     # Mock que sempre lança exceção
     def mock_cmd_collect(*args, **kwargs):
         raise RuntimeError("Unexpected error")
 
-    with patch.object(sys, 'argv', ['hippo', 'collect', 'test']):
-        with patch("core.cli.root._cmd_collect", mock_cmd_collect):
-            # Exceções devem propagar normalmente (não há tratamento global)
-            with pytest.raises(RuntimeError, match="Unexpected error"):
-                main()
+    with (
+        patch.object(sys, "argv", ["hippo", "collect", "test"]),
+        patch("core.cli.root._cmd_collect", mock_cmd_collect),
+    ):
+        # Exceções devem propagar normalmente (não há tratamento global)
+        with pytest.raises(RuntimeError, match="Unexpected error"):
+            main()
 
 
 # === SUBCOMMAND DISPATCH ===
+
 
 def test_main_collect_dispatch():
     """Testa que 'collect' é despachado corretamente"""
@@ -101,6 +109,7 @@ def test_main_set_dispatch():
 
 
 # === LEGACY COMPATIBILITY ===
+
 
 def test_main_legacy_flags_dispatch_to_collect():
     """Testa que flags legacy são despachados para collect"""
@@ -126,6 +135,7 @@ def test_main_legacy_file_flag_dispatch():
 
 # === HELP MIXED WITH SUBCOMMANDS ===
 
+
 def test_main_help_with_subcommand():
     """Testa help misturado com subcomando"""
     # Se há -h em qualquer lugar, deve mostrar main help
@@ -142,6 +152,7 @@ def test_main_help_flag_precedence():
 
 # === ERROR CASES FROM SUBCOMMANDS ===
 
+
 def test_collect_error_propagation():
     """Testa que erros do collect são propagados"""
     # Missing required args should cause SystemExit
@@ -156,6 +167,7 @@ def test_set_error_propagation():
 
 
 # === COMPREHENSIVE DISPATCH TESTING ===
+
 
 def test_main_argv_none_uses_sys_argv():
     """Testa que argv=None usa sys.argv"""
@@ -186,6 +198,7 @@ def test_main_whitespace_handling():
 
 # === INTEGRATION WITH SUBCOMMAND LOGIC ===
 
+
 def test_main_preserves_subcommand_return_codes():
     """Testa que códigos de retorno dos subcomandos são preservados"""
     with patch("core.cli.root._cmd_collect") as mock_collect:
@@ -205,6 +218,7 @@ def test_main_handles_subcommand_exceptions():
 
 
 # === ARGUMENT PROCESSING EDGE CASES ===
+
 
 def test_main_single_dash_argument():
     """Testa argumento com dash único"""
@@ -235,11 +249,14 @@ def test_main_multiple_help_flags():
 
 # === COMMAND LINE INTERFACE ROBUSTNESS ===
 
+
 def test_main_case_sensitive_commands():
     """Testa que comandos são case-sensitive"""
     # 'Collect' != 'collect', mas devido à backward compatibility com -t,
     # ainda é interpretado como collect command
-    with pytest.raises(SystemExit):  # argparse rejeita 'Collect' como argumento inválido
+    with pytest.raises(
+        SystemExit
+    ):  # argparse rejeita 'Collect' como argumento inválido
         main(["Collect", "-t", "test"])
 
 

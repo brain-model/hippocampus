@@ -11,10 +11,15 @@ from pathlib import Path
 
 from jsonschema import Draft7Validator
 
+# Constants for SemVer validation
+SEMVER_PARTS_COUNT = 3
+MIN_MAJOR_VERSION = 1
+MAX_MAJOR_VERSION = 2
+
 
 def _parse_semver(ver: str) -> tuple[int, int, int]:
     parts = ver.split(".")
-    if len(parts) != 3 or not all(p.isdigit() for p in parts):
+    if len(parts) != SEMVER_PARTS_COUNT or not all(p.isdigit() for p in parts):
         raise ValueError(f"Invalid SemVer: {ver}")
     return tuple(int(p) for p in parts)  # type: ignore[return-value]
 
@@ -40,6 +45,7 @@ def validate_manifest(manifest: dict, schema_path: str) -> None:
         key=lambda e: (tuple(e.path), getattr(e, "validator", ""), e.message),
     )
     if errors:
+
         def _loc(e: object) -> str:  # type: ignore[no-redef]
             try:
                 # jsonschema errors expose .path as a deque-like of path components
@@ -61,11 +67,13 @@ def validate_manifest(manifest: dict, schema_path: str) -> None:
         major, _minor, _patch = _parse_semver(mv)
     except ValueError as e:
         raise ValueError(f"Manifest validation failed: manifestVersion: {e}") from e
-    if major < 1:
+    if major < MIN_MAJOR_VERSION:
         raise ValueError(
-            "Manifest validation failed: manifestVersion: unsupported (requires >=1.0.0)"
+            "Manifest validation failed: manifestVersion: "
+            "unsupported (requires >=1.0.0)"
         )
-    if major >= 2:
+    if major >= MAX_MAJOR_VERSION:
         raise ValueError(
-            "Manifest validation failed: manifestVersion: incompatible major (requires <2.0.0)"
+            "Manifest validation failed: manifestVersion: "
+            "incompatible major (requires <2.0.0)"
         )

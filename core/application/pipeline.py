@@ -10,10 +10,12 @@ This module orchestrates the MVP pipeline:
 
 from __future__ import annotations
 
+import contextlib
+import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from uuid import uuid4
 
 from core.domain.manifest import MANIFEST_VERSION, STATUS_AWAITING
@@ -22,11 +24,17 @@ from core.infrastructure.extraction.heuristic import HeuristicExtractionAgent
 from core.infrastructure.formatters.json_writer import ManifestJsonWriter
 from core.infrastructure.loaders.registry import get_loader_for_file
 from core.infrastructure.loaders.text import TextLoader
+from core.infrastructure.logging.structured import get_logger
+from core.noesis.graph.types import GraphConfig
 from core.resources import MANIFEST_SCHEMA_PATH
 from core.resources.templates import render_template
-from core.ui.console import (collect_section, friendly_ts, line, progress_bar,
-                             summary_panel)
-from core.noesis.graph.types import GraphConfig
+from core.ui.console import (
+    collect_section,
+    friendly_ts,
+    line,
+    progress_bar,
+    summary_panel,
+)
 
 from .validation import validate_manifest
 
@@ -38,6 +46,74 @@ _TPL_END = "cli/end_generic.j2"
 _TPL_REPORT = "cli/report_generic.j2"
 
 
+def _log_pipeline_metrics(
+    verbose: bool,
+    mode: str,
+    extractor: Any,
+    url_count: int,
+    citation_count: int,
+    refs_len: int,
+    total_latency: int,
+    manifest_id: str,
+):
+    """Log detailed pipeline metrics if verbose or traces enabled."""
+    logger = get_logger(__name__, level="DEBUG" if verbose else "INFO")
+
+    # Check for trace environment variables
+    trace_llm = os.getenv("HIPPO_TRACE_LLM", "false").lower() == "true"
+    trace_graph = os.getenv("HIPPO_TRACE_GRAPH", "false").lower() == "true"
+
+    # Log detailed metrics if verbose or traces enabled
+    if verbose or trace_llm or trace_graph:
+        logger.info(
+            "Pipeline execution completed",
+            mode=mode,
+            url_count=url_count,
+            citation_count=citation_count,
+            total_refs=refs_len,
+            total_latency_ms=total_latency,
+            manifest_id=manifest_id,
+        )
+
+        # Log LLM details if available and traces enabled
+        if mode == "llm" and (verbose or trace_llm):
+            _log_llm_details(logger, extractor)
+
+        # Log Graph details if available and traces enabled
+        if mode == "llm-graph" and (verbose or trace_graph):
+            _log_graph_details(logger, extractor)
+
+
+def _log_llm_details(logger, extractor: Any):
+    """Log LLM execution details."""
+    provider = getattr(extractor, "last_provider", None)
+    model = getattr(extractor, "last_model", None)
+    tokens = getattr(extractor, "last_tokens", None)
+    llm_latency = getattr(extractor, "last_extract_latency_ms", None)
+
+    if provider:
+        logger.info(
+            "LLM execution details",
+            provider=provider,
+            model=model,
+            tokens=tokens,
+            llm_latency_ms=llm_latency,
+        )
+
+
+def _log_graph_details(logger, extractor: Any):
+    """Log Graph execution details."""
+    graph_total_ms = getattr(extractor, "last_graph_total_ms", None)
+    graph_tokens = getattr(extractor, "last_graph_tokens", None)
+
+    if graph_total_ms is not None:
+        logger.info(
+            "Graph execution details",
+            graph_total_ms=graph_total_ms,
+            graph_tokens=graph_tokens,
+        )
+
+
 def _render_report_and_end(
     verbose: bool,
     mode: str,
@@ -46,8 +122,20 @@ def _render_report_and_end(
     citation_count: int,
     refs_len: int,
     total_latency: int,
-    manifest: Dict[str, Any],
+    manifest: dict[str, Any],
 ):
+    # Log detailed metrics if requested
+    _log_pipeline_metrics(
+        verbose,
+        mode,
+        extractor,
+        url_count,
+        citation_count,
+        refs_len,
+        total_latency,
+        manifest["manifestId"],
+    )
+
     report = render_template(
         _TPL_REPORT,
         mode=mode,
@@ -66,14 +154,10 @@ def _render_report_and_end(
             else None
         ),
         graph_total_ms=(
-            getattr(extractor, "last_graph_total_ms", None)
-            if mode == "llm"
-            else None
+            getattr(extractor, "last_graph_total_ms", None) if mode == "llm" else None
         ),
         graph_tokens=(
-            getattr(extractor, "last_graph_tokens", None)
-            if mode == "llm"
-            else None
+            getattr(extractor, "last_graph_tokens", None) if mode == "llm" else None
         ),
     )
     if verbose:
@@ -98,8 +182,8 @@ def _log_begin(
     mode: str,
     source_type: str,
     source_format: str,
-    resolved_cfg: Dict[str, Any],
-    provenance: Dict[str, str],
+    resolved_cfg: dict[str, Any],
+    provenance: dict[str, str],
 ) -> None:
     line(f"begin={mode} | source={source_type} | format={source_format}")
     if mode == "llm" and resolved_cfg:
@@ -116,10 +200,8 @@ def _extract_with_timing(
     extracted = extractor.extract(normalized)
     latency = int((time.time() - start) * 1000)
     if mode == "llm" and getattr(extractor, "last_extract_latency_ms", None) is None:
-        try:
-            setattr(extractor, "last_extract_latency_ms", latency)
-        except Exception:
-            pass
+        with contextlib.suppress(Exception):
+            extractor.last_extract_latency_ms = latency
     return extracted, latency
 
 
@@ -164,9 +246,9 @@ def build_manifest_from_text(
     out_dir: str,
     verbose: bool = False,
     engine: str = "heuristic",
-    engine_overrides: Dict[str, Any] | None = None,
+    engine_overrides: dict[str, Any] | None = None,
     graph_config: Any | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Build and persist a manifest from input text.
 
     The flow loads and normalizes the text, extracts references, assembles
@@ -195,8 +277,9 @@ def build_manifest_from_text(
     else:
         resolved_cfg, provenance = {}, {}
     if mode == "llm":
-        from core.infrastructure.extraction.langchain_agent import \
-            LangChainExtractionAgent
+        from core.infrastructure.extraction.langchain_agent import (
+            LangChainExtractionAgent,
+        )
 
         if use_graph:
             # Merge CLI graph_config with resolved LLM cfg as engine_overrides
@@ -230,7 +313,7 @@ def build_manifest_from_text(
                     mode=mode,
                     source_type="text",
                     source_format="text",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             )
 
@@ -309,7 +392,7 @@ def build_manifest_from_text(
             )
         )
 
-    manifest: Dict[str, Any] = {
+    manifest: dict[str, Any] = {
         "manifestVersion": MANIFEST_VERSION,
         "status": STATUS_AWAITING,
         "sourceDocument": {
@@ -323,7 +406,7 @@ def build_manifest_from_text(
     }
 
     manifest["manifestId"] = uuid4().hex
-    manifest["processedAt"] = datetime.now(timezone.utc).isoformat()
+    manifest["processedAt"] = datetime.now(UTC).isoformat()
 
     validate_manifest(manifest, MANIFEST_SCHEMA_PATH)
     _render_report_and_end(
@@ -345,9 +428,9 @@ def build_manifest_from_file(
     out_dir: str,
     verbose: bool = False,
     engine: str = "heuristic",
-    engine_overrides: Dict[str, Any] | None = None,
+    engine_overrides: dict[str, Any] | None = None,
     graph_config: Any | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Build and persist a manifest from an input file.
 
     Selects an appropriate loader based on the file extension, normalizes
@@ -376,8 +459,9 @@ def build_manifest_from_file(
     else:
         resolved_cfg, provenance = {}, {}
     if mode == "llm":
-        from core.infrastructure.extraction.langchain_agent import \
-            LangChainExtractionAgent
+        from core.infrastructure.extraction.langchain_agent import (
+            LangChainExtractionAgent,
+        )
 
         if use_graph:
             cfg = GraphConfig(enabled=True)
@@ -408,7 +492,7 @@ def build_manifest_from_file(
                     mode=mode,
                     source_type="file",
                     source_format=Path(file_path).suffix.lstrip(".") or "file",
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )
             )
 
@@ -488,7 +572,7 @@ def build_manifest_from_file(
             )
         )
 
-    manifest: Dict[str, Any] = {
+    manifest: dict[str, Any] = {
         "manifestVersion": MANIFEST_VERSION,
         "status": STATUS_AWAITING,
         "sourceDocument": {
@@ -502,7 +586,7 @@ def build_manifest_from_file(
     }
 
     manifest["manifestId"] = uuid4().hex
-    manifest["processedAt"] = datetime.now(timezone.utc).isoformat()
+    manifest["processedAt"] = datetime.now(UTC).isoformat()
 
     validate_manifest(manifest, MANIFEST_SCHEMA_PATH)
     _render_report_and_end(

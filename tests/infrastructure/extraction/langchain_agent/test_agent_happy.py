@@ -15,8 +15,9 @@ def test_extract_valid_json(monkeypatch):
             '"sourceFormat": "web_content", '
             '"sourcePath": "ref1", '
             '"details": {}}'
-            ']}'
+            "]}"
         )
+
     monkeypatch.setattr(agent, "_update_last_metadata", fake_update_last_metadata)
     result = agent.extract("texto válido")
     assert "references" in result

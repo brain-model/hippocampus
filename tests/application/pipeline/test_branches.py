@@ -24,28 +24,31 @@ def test_pipeline_branch_verbose(monkeypatch, tmp_path):
 
 
 def test_pipeline_branch_llm(monkeypatch, tmp_path):
-    # Testa branch engine="llm" com overrides, mockando LangChainExtractionAgent corretamente
+    # Testa branch engine="llm" com overrides, mockando LangChainExtractionAgent
     class DummyAgent:
         def extract(self, text):
             return {
-                "references": [{
-                    "id": 1,
-                    "rawString": "ref",
-                    "referenceType": "web_link",
-                    "sourceFormat": "web_content",
-                    "sourcePath": "ref",
-                    "details": {}
-                }]
+                "references": [
+                    {
+                        "id": 1,
+                        "rawString": "ref",
+                        "referenceType": "web_link",
+                        "sourceFormat": "web_content",
+                        "sourcePath": "ref",
+                        "details": {},
+                    }
+                ]
             }
 
     monkeypatch.setattr(
         "core.infrastructure.extraction.langchain_agent.LangChainExtractionAgent",
-        lambda **kwargs: DummyAgent()
+        lambda **kwargs: DummyAgent(),
     )
     m = pipeline.build_manifest_from_text(
-        "Texto", str(tmp_path),
+        "Texto",
+        str(tmp_path),
         engine="llm",
-        engine_overrides={"provider": "openai", "model": "gpt-4o-mini"}
+        engine_overrides={"provider": "openai", "model": "gpt-4o-mini"},
     )
     assert m["status"] == "Awaiting Consolidation"
     assert "references" in m["knowledgeIndex"]
@@ -77,12 +80,13 @@ def test_pipeline_engine_overrides(monkeypatch, tmp_path):
 
     monkeypatch.setattr(
         "core.infrastructure.extraction.langchain_agent.LangChainExtractionAgent",
-        DummyAgent
+        DummyAgent,
     )
     m = pipeline.build_manifest_from_text(
-        "Texto", str(tmp_path),
+        "Texto",
+        str(tmp_path),
         engine="llm",
-        engine_overrides={"temperature": 0.5, "model": "gpt-3.5-turbo"}
+        engine_overrides={"temperature": 0.5, "model": "gpt-3.5-turbo"},
     )
     assert m["status"] == "Awaiting Consolidation"
 
@@ -100,6 +104,7 @@ def test_pipeline_agent_selection_heuristic(monkeypatch, tmp_path):
 
 # === TESTES VERBOSE E LLM LOGGING ===
 
+
 def test_verbose_log_begin_with_llm_provenance(tmp_path, monkeypatch):
     """Testa _log_begin com logs verbose e provenance do LLM"""
     from unittest.mock import patch
@@ -114,14 +119,15 @@ def test_verbose_log_begin_with_llm_provenance(tmp_path, monkeypatch):
     with patch("core.application.pipeline.line") as mock_line:
         monkeypatch.setattr(
             "core.infrastructure.extraction.langchain_agent.LangChainExtractionAgent",
-            lambda **kwargs: DummyAgent()
+            lambda **kwargs: DummyAgent(),
         )
 
         pipeline.build_manifest_from_text(
-            "Test text", str(tmp_path),
+            "Test text",
+            str(tmp_path),
             engine="llm",
             engine_overrides={"provider": "openai", "model": "gpt-4"},
-            verbose=True
+            verbose=True,
         )
 
         # Verificar se logs de provenance foram chamados
@@ -143,14 +149,15 @@ def test_non_verbose_llm_provenance_logging(tmp_path, monkeypatch):
     with patch("core.application.pipeline.line") as mock_line:
         monkeypatch.setattr(
             "core.infrastructure.extraction.langchain_agent.LangChainExtractionAgent",
-            lambda **kwargs: DummyAgent()
+            lambda **kwargs: DummyAgent(),
         )
 
         result = pipeline.build_manifest_from_text(
-            "Test text", str(tmp_path),
+            "Test text",
+            str(tmp_path),
             engine="llm",
             engine_overrides={"temperature": 0.7, "model": "gpt-3.5-turbo"},
-            verbose=False  # Modo não-verbose
+            verbose=False,  # Modo não-verbose
         )
 
         # Verificar que logs foram chamados (o conteúdo específico pode variar)
@@ -169,25 +176,28 @@ def test_file_pipeline_with_llm(tmp_path, monkeypatch):
     class DummyAgent:
         def extract(self, text):
             return {
-                "references": [{
-                    "id": 1,
-                    "rawString": "test",
-                    "referenceType": "web_link",
-                    "sourceFormat": "web_content",
-                    "sourcePath": "test",
-                    "details": {}
-                }]
+                "references": [
+                    {
+                        "id": 1,
+                        "rawString": "test",
+                        "referenceType": "web_link",
+                        "sourceFormat": "web_content",
+                        "sourcePath": "test",
+                        "details": {},
+                    }
+                ]
             }
 
     monkeypatch.setattr(
         "core.infrastructure.extraction.langchain_agent.LangChainExtractionAgent",
-        lambda **kwargs: DummyAgent()
+        lambda **kwargs: DummyAgent(),
     )
 
     result = pipeline.build_manifest_from_file(
-        str(test_file), str(tmp_path),
+        str(test_file),
+        str(tmp_path),
         engine="llm",
-        engine_overrides={"provider": "openai"}
+        engine_overrides={"provider": "openai"},
     )
 
     assert result["status"] == "Awaiting Consolidation"
@@ -210,7 +220,7 @@ def test_verbose_report_generation(tmp_path, monkeypatch):
                         "rawString": "https://test.com",
                         "sourceFormat": "web_content",
                         "sourcePath": "https://test.com",
-                        "details": {}
+                        "details": {},
                     },
                     {
                         "id": 2,
@@ -218,21 +228,21 @@ def test_verbose_report_generation(tmp_path, monkeypatch):
                         "rawString": "Author (2024)",
                         "sourceFormat": "text",
                         "sourcePath": "",
-                        "details": {}
-                    }
+                        "details": {},
+                    },
                 ]
             }
 
     with patch("core.application.pipeline.summary_panel") as mock_panel:
         monkeypatch.setattr(
-            "core.application.pipeline.HeuristicExtractionAgent",
-            lambda: DummyAgent()
+            "core.application.pipeline.HeuristicExtractionAgent", lambda: DummyAgent()
         )
 
         pipeline.build_manifest_from_text(
-            "Test content", str(tmp_path),
+            "Test content",
+            str(tmp_path),
             engine="heuristic",
-            verbose=True  # Verbose ativo
+            verbose=True,  # Verbose ativo
         )
 
         # Verificar que summary_panel foi chamado com relatório

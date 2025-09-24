@@ -6,6 +6,47 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-09-23
+
+### Added (0.7.0)
+
+- CI: smoke install do pacote (wheel) com `hippo --help` e `hippo collect` heurístico.
+- CI: build de documentação de usuário com MkDocs Material e artifact de site.
+- Docs: estrutura inicial de documentação de usuário (`docs-user/`) e configuração `mkdocs.yml` (Material, strict).
+
+### Changed (0.7.0)
+
+- Empacotamento: instalação completa (sem extras); mensagens de ImportError do LLM atualizadas.
+- Build: inclusão explícita de `core/resources/**` no wheel (Hatch include + force-include do schema).
+- Workflows: `uv sync --dev` (sem `--all-extras`), melhorias no job de build-test.
+- Metadados: adição de `license` no `pyproject.toml` e atualização de classifiers/URLs.
+
+### Fixed (0.7.0)
+
+- Lint: linhas longas e espaçamento em slices no `langchain_agent.py`.
+- PDF loader: evitar try/except/continue (Bandit), fallback para chunk vazio.
+
+### Added
+
+- **CI/CD Pipeline**: GitHub Actions workflows para lint, teste, build e release automatizado
+- **Multi-Python Testing**: Testes automatizados em Python 3.11, 3.12 e 3.13
+- **Coverage Reporting**: Integração com Codecov para relatórios de cobertura
+- **Security Analysis**: Bandit integrado ao pipeline de CI
+- **Release Automation**: Workflow automático para publicação no PyPI e GitHub Releases
+- **PR Validation**: Verificações automáticas de CHANGELOG e documentação
+- **Dependabot**: Atualizações automáticas de dependências e GitHub Actions
+- **Issue Templates**: Templates para bug reports e feature requests
+- **PR Template**: Template padronizado para pull requests
+- **Makefile Commands**: Comandos CI/CD (`make ci`, `make build`, `make release-check`)
+- **Integration Tests**: Testes end-to-end automatizados no CI
+- **Performance Tests**: Testes básicos de performance no pipeline
+
+### Changed
+
+- **Workflow CI**: Expandido de job único para pipeline multi-stage com validações
+- **Makefile**: Reorganizado com seções para desenvolvimento e CI/CD
+- **Pre-commit**: Integrado ao workflow de CI para garantir qualidade
+
 ## [0.6.0] - 2025-09-22
 
 ### Changed
@@ -100,8 +141,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Packaging via `pyproject.toml` with console script `hippocampus`.
 - Initial tests and CI setup groundwork.
 
-[Unreleased]: https://example.com/compare/0.6.0...HEAD
-[0.6.0]: https://example.com/compare/0.5.0...0.6.0
-[0.4.0]: https://example.com/compare/0.3.0...0.4.0
-[0.3.0]: https://example.com/compare/0.2.0...0.3.0
-[0.2.0]: https://example.com/compare/0.1.0...0.2.0
+[Unreleased]: https://github.com/brain-model/hippocampus/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/brain-model/hippocampus/compare/0.6.0...0.7.0
+[0.6.0]: https://github.com/brain-model/hippocampus/compare/0.5.0...0.6.0
+[0.4.0]: https://github.com/brain-model/hippocampus/compare/0.3.0...0.4.0
+[0.3.0]: https://github.com/brain-model/hippocampus/compare/0.2.0...0.3.0
+[0.2.0]: https://github.com/brain-model/hippocampus/compare/0.1.0...0.2.0

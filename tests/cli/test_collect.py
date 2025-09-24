@@ -16,8 +16,8 @@ import pytest
 from core.cli.root import main
 from core.infrastructure.config.manager import ConfigManager
 
-
 # === BASIC COLLECT FUNCTIONALITY ===
+
 
 def test_cli_text_success(tmp_path: Path):
     """Testa collect com input de texto (-t flag)"""
@@ -51,6 +51,7 @@ def test_collect_help_flag():
 
 # === ENGINE FLAGS AND LLM OVERRIDES ===
 
+
 def test_collect_engine_llm_overrides_pass(tmp_path: Path, monkeypatch):
     """Testa collect com engine LLM e todos os overrides"""
     # Avoid contacting real LLM by mocking extract
@@ -60,28 +61,30 @@ def test_collect_engine_llm_overrides_pass(tmp_path: Path, monkeypatch):
     )
     # We don't assert inside pipeline here; just verify exit code and manifest
     out_dir = tmp_path / "out"
-    code = main([
-        "collect",
-        "--engine",
-        "llm",
-        "--provider",
-        "openai",
-        "--model",
-        "gpt-4o-mini",
-        "--temperature",
-        "0.7",
-        "--max-tokens",
-        "1000",
-        "--timeout-s",
-        "30",
-        "--retries",
-        "3",
-        "--verbose",
-        "-t",
-        "test text",
-        "-o",
-        str(out_dir),
-    ])
+    code = main(
+        [
+            "collect",
+            "--engine",
+            "llm",
+            "--provider",
+            "openai",
+            "--model",
+            "gpt-4o-mini",
+            "--temperature",
+            "0.7",
+            "--max-tokens",
+            "1000",
+            "--timeout-s",
+            "30",
+            "--retries",
+            "3",
+            "--verbose",
+            "-t",
+            "test text",
+            "-o",
+            str(out_dir),
+        ]
+    )
     assert code == 0
     assert (out_dir / "manifest" / "manifest.json").exists()
 
@@ -96,6 +99,7 @@ def test_collect_engine_heuristic_default(tmp_path: Path):
 
 # === LEGACY VS SUBCOMMAND VARIANTS ===
 
+
 def _run(argv):
     """Helper para executar main e verificar código 0"""
     code = main(argv)  # type: ignore[arg-type]
@@ -104,7 +108,9 @@ def _run(argv):
 
 
 @pytest.mark.parametrize("use_subcmd", [False, True])
-def test_collect_legacy_and_subcommand_paths(tmp_path: Path, use_subcmd: bool, monkeypatch):
+def test_collect_legacy_and_subcommand_paths(
+    tmp_path: Path, use_subcmd: bool, monkeypatch
+):
     """Testa compatibilidade entre paths legacy e subcommand"""
     monkeypatch.chdir(tmp_path)
     # configura engine.provider sem chave -> não falha em modo heuristic
@@ -122,14 +128,9 @@ def test_collect_legacy_and_subcommand_paths(tmp_path: Path, use_subcmd: bool, m
 def test_collect_verbose_flag(tmp_path: Path):
     """Testa collect com flag --verbose"""
     out_dir = tmp_path / "out"
-    code = main([
-        "collect",
-        "--verbose",
-        "-t",
-        "Test with verbose output",
-        "-o",
-        str(out_dir)
-    ])
+    code = main(
+        ["collect", "--verbose", "-t", "Test with verbose output", "-o", str(out_dir)]
+    )
     assert code == 0
     assert (out_dir / "manifest" / "manifest.json").exists()
 
@@ -157,12 +158,13 @@ def test_collect_different_file_types(tmp_path: Path):
 
 # === ERROR HANDLING ===
 
+
 def test_collect_invalid_file_path(capsys):
     """Testa collect com arquivo inexistente"""
     # Arquivo inexistente deve executar mas retornar código de erro
     code = main(["collect", "-f", "/nonexistent/file.txt"])
-    # Pipeline executa mas falha no load, retorna 1 e exibe erro
-    assert code == 1
+    # Pipeline executa mas falha no load, retorna 3 (FILE_NOT_FOUND) e exibe erro
+    assert code == 3  # ExitCode.FILE_NOT_FOUND
     captured = capsys.readouterr()
     assert "No such file or directory" in captured.err
 
@@ -184,27 +186,45 @@ def test_collect_temperature_out_of_range(tmp_path: Path, monkeypatch):
 
     out_dir = tmp_path / "out"
     # Temperature muito alta - deve funcionar (validação é no LLM agent)
-    code = main([
-        "collect",
-        "--engine", "llm",
-        "--provider", "openai",
-        "--temperature", "2.0",
-        "-t", "test",
-        "-o", str(out_dir)
-    ])
+    code = main(
+        [
+            "collect",
+            "--engine",
+            "llm",
+            "--provider",
+            "openai",
+            "--temperature",
+            "2.0",
+            "-t",
+            "test",
+            "-o",
+            str(out_dir),
+        ]
+    )
     assert code == 0
 
 
 # === OUTPUT DIRECTORY TESTS ===
 
-def test_collect_default_output_directory(tmp_path: Path, monkeypatch):
-    """Testa que output padrão é ./hippo-out"""
-    monkeypatch.chdir(tmp_path)
 
+def test_collect_default_output_directory(tmp_path: Path, monkeypatch):
+    """Testa que output padrão é ~/.brain-model/hippocampus/buffer/consolidation"""
+    # isola HOME para tmp_path
+    monkeypatch.setenv("HOME", str(tmp_path))
+    # não define -o para usar default
     code = main(["collect", "-t", "Test default output"])
     assert code == 0
-    # Verifica que foi criado em ./hippo-out
-    assert (tmp_path / "hippo-out" / "manifest" / "manifest.json").exists()
+    manifest_dir = (
+        tmp_path
+        / ".brain-model"
+        / "hippocampus"
+        / "buffer"
+        / "consolidation"
+        / "manifest"
+    )
+    assert manifest_dir.exists()
+    files = list(manifest_dir.glob("manifest_*.json"))
+    assert len(files) == 1
 
 
 def test_collect_custom_output_directory(tmp_path: Path):
@@ -216,7 +236,32 @@ def test_collect_custom_output_directory(tmp_path: Path):
     assert (custom_out / "manifest" / "manifest.json").exists()
 
 
+def test_collect_uses_env_output_dir_when_set(tmp_path: Path, monkeypatch):
+    """Quando HIPPO_OUTPUT_DIR está setado e -o não é passado, usar env dir."""
+    # Isola HOME e define HIPPO_OUTPUT_DIR para diretório custom
+    monkeypatch.setenv("HOME", str(tmp_path))
+    env_out = tmp_path / "env-out"
+    monkeypatch.setenv("HIPPO_OUTPUT_DIR", str(env_out))
+
+    code = main(["collect", "-t", "Using env output dir"])
+    assert code == 0
+    # Como é custom (não é o buffer default), deve ser manifest.json
+    assert (env_out / "manifest" / "manifest.json").exists()
+
+
+def test_collect_cli_output_overrides_env(tmp_path: Path, monkeypatch):
+    """A flag -o deve ter precedência sobre HIPPO_OUTPUT_DIR."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("HIPPO_OUTPUT_DIR", str(tmp_path / "env-out"))
+    cli_out = tmp_path / "cli-out"
+
+    code = main(["collect", "-t", "CLI overrides env", "-o", str(cli_out)])
+    assert code == 0
+    assert (cli_out / "manifest" / "manifest.json").exists()
+
+
 # === COMPREHENSIVE ENGINE TESTING ===
+
 
 def test_collect_all_llm_providers(tmp_path: Path, monkeypatch):
     """Testa collect com diferentes providers LLM"""
@@ -230,12 +275,18 @@ def test_collect_all_llm_providers(tmp_path: Path, monkeypatch):
 
     for provider in providers:
         out_dir = tmp_path / f"out_{provider}"
-        code = main([
-            "collect",
-            "--engine", "llm",
-            "--provider", provider,
-            "-t", f"Test with {provider}",
-            "-o", str(out_dir)
-        ])
+        code = main(
+            [
+                "collect",
+                "--engine",
+                "llm",
+                "--provider",
+                provider,
+                "-t",
+                f"Test with {provider}",
+                "-o",
+                str(out_dir),
+            ]
+        )
         assert code == 0
         assert (out_dir / "manifest" / "manifest.json").exists()

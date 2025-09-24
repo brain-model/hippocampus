@@ -6,7 +6,7 @@ manifest format produced and consumed by the application pipeline.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, TypedDict
+from typing import Any, Literal, TypedDict
 
 MANIFEST_VERSION: str = "1.0.0"
 STATUS_AWAITING: Literal["Awaiting Consolidation"] = "Awaiting Consolidation"
@@ -31,13 +31,13 @@ class Reference(TypedDict, total=False):
     referenceType: str
     sourceFormat: str
     sourcePath: str
-    details: Dict[str, Any]
+    details: dict[str, Any]
 
 
 class KnowledgeIndex(TypedDict):
     """Index consolidating extracted knowledge structures."""
 
-    references: List[Reference]
+    references: list[Reference]
 
 
 class Manifest(TypedDict):

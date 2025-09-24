@@ -29,7 +29,7 @@ def test_article_ok(schema_path: str):
             "authors": ["Doe"],
             "journal": "J",
             "year": 2020,
-            "doi": "10.1000/xyz"
+            "doi": "10.1000/xyz",
         },
     }
     validate_manifest(wrap(ref), schema_path)

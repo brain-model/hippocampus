@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from core.reliability.retry import is_permanent_error, is_transient_error, retry_call
+
 from ..types import GraphConfig, NodeResult
 
 
 def _extract_once(
     text: str,
-    resolved_cfg: Dict[str, Any],
-) -> Tuple[list[Dict[str, Any]], Dict[str, int] | None, int | None, Dict[str, str]]:
-    from core.infrastructure.extraction.langchain_agent import (
-        LangChainExtractionAgent,
-    )
+    resolved_cfg: dict[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, int] | None, int | None, dict[str, str]]:
+    from core.infrastructure.extraction.langchain_agent import LangChainExtractionAgent
 
     agent = LangChainExtractionAgent(cfg_override=resolved_cfg)
     data = agent.extract(text)
@@ -27,7 +26,7 @@ def _extract_once(
     return extractions, tokens, latency_ms, llm_info
 
 
-def _heuristic_extractions(text: str) -> list[Dict[str, Any]]:
+def _heuristic_extractions(text: str) -> list[dict[str, Any]]:
     from core.infrastructure.extraction.heuristic import HeuristicExtractionAgent
 
     refs = HeuristicExtractionAgent().extract(text).get("references", [])
@@ -37,7 +36,9 @@ def _heuristic_extractions(text: str) -> list[Dict[str, Any]]:
 def _try_llm_extractions(
     text: str,
     cfg: GraphConfig,
-) -> Tuple[list[Dict[str, Any]], Dict[str, int] | None, int | None, bool, Dict[str, str] | None]:
+) -> tuple[
+    list[dict[str, Any]], dict[str, int] | None, int | None, bool, dict[str, str] | None
+]:
     from core.infrastructure.config.resolver import resolve_engine_config
 
     resolved_cfg, _ = resolve_engine_config(cfg.engine_overrides or {})
@@ -78,13 +79,16 @@ def _try_llm_extractions(
 def _build_metrics(
     start: float,
     latency_ms: int | None,
-    tokens: Dict[str, int] | None,
-) -> Dict[str, Any]:
+    tokens: dict[str, int] | None,
+) -> dict[str, Any]:
     lm = latency_ms if latency_ms is not None else int((time.time() - start) * 1000)
-    return {"latency_ms": lm, "tokens": tokens or {"prompt": 0, "completion": 0}, "node": "extract"}
+    default_tokens = {"prompt": 0, "completion": 0}
+    return {"latency_ms": lm, "tokens": tokens or default_tokens, "node": "extract"}
 
 
-def run(text: str, _classifications: NodeResult, cfg: GraphConfig | None = None) -> NodeResult:
+def run(
+    text: str, _classifications: NodeResult, cfg: GraphConfig | None = None
+) -> NodeResult:
     start = time.time()
     if cfg and getattr(cfg, "enabled", False):
         extractions, tokens, latency_ms, _, llm_info = _try_llm_extractions(text, cfg)

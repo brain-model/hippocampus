@@ -159,10 +159,10 @@ The beauty of this design lies in the flexibility of the `details` field.
 1. Foundation and Scaffolding
 
 * Repo setup: `hippocampus/` with `core/{application,cli,domain,infrastructure,noesis}`.
-* Packaging: `[project].name = "hippocampus"`, entrypoint `hippocampus = core.cli.root:main`.
+* Packaging: `[project].name = "hippocampus"`, entrypoint `hippo = core.cli.root:main`.
 * Contracts: define `Manifest` schema (Pydantic or TypedDict) and `Loader`, `Extractor`, `Formatter` interfaces in `core/domain`.
 * Templates/Prompts: seed directories `prompts/` and `templates/` with placeholders.
-* Acceptance: project builds, `hippocampus --help` runs, schema module importable.
+* Acceptance: project builds, `hippo --help` runs, schema module importable.
 
 1. Minimal Viable Pipeline (Text only)
 
@@ -198,11 +198,30 @@ The beauty of this design lies in the flexibility of the `details` field.
 * Deterministic seeds for LLM calls where supported; request/response traces gated by env.
 * Acceptance: logs show stages and timings; CI runs lint + tests.
 
-1. Packaging and Distribution
+1. Packaging and Distribution (Phase 8)
 
-* Pin runtime deps; optional extras `llm`, `pdf`.
-* Publish to internal index or package as wheel; usage documented in README.
-* Acceptance: `pip install .` provides `hippocampus` CLI.
+* Instalação completa (sem extras): todas as dependências ficam em `[project].dependencies`.
+* Artefatos: gerar wheel e sdist; incluir `core/resources/**` (schemas, prompts, templates).
+* CI: job de build + smoke (`pip install dist/*.whl`, `hippo --help`, coleta heurística curta).
+* Release: anexar artefatos no GitHub Release; publicação em PyPI opcional/condicional.
+* Documentação: README com instruções de instalação (pip/uv), requisitos (Python >= 3.11).
+* Aceite: `pip install .` fornece `hippo`; recursos e schema acessíveis em runtime.
+
+### 6.7 Documentation Strategy (User vs Technical)
+
+* User Documentation (MkDocs + Material):
+  * Objetivo: documentação de uso do CLI para usuários finais.
+  * Stack: `mkdocs` com tema Material (versão mais recente), `docs_dir: docs-user/`.
+  * Estrutura recomendada: `index.md` (Getting Started), `installation.md`, `usage.md`, `cli.md`, `configuration.md`, `troubleshooting.md`.
+  * Publicação: GitHub Pages via workflow; URL adicionada em `project.urls` do `pyproject.toml` para exibição no PyPI.
+* Technical Documentation (in-repo):
+  * Objetivo: documentação de projeto e desenvolvimento (interna ao repositório).
+  * Local: `docs/` (design_doc.md, BACKLOG.md, TODO.md, arquitetura, decisões, etc.).
+  * Entrada: `README.md` conterá seção "Documentação Técnica" com links para os artefatos internos.
+* Critérios de Aceite:
+  * Site do MkDocs acessível e publicado a partir da branch default ou `gh-pages`.
+  * Links no `README.md` e `pyproject.toml` (project-urls) apontam para a documentação pública.
+  * Artefatos técnicos permanecem versionados no repo e navegáveis via README.
 
 ### 6.3 Detailed Work Breakdown
 
@@ -240,5 +259,5 @@ The beauty of this design lies in the flexibility of the `details` field.
 ### 6.6 Operational Playbook
 
 * Config via env vars: `HIPPO_MODEL`, `HIPPO_TIMEOUT`, `HIPPO_VERBOSE`.
-* Directory convention: output to `manifest/manifest.json` under provided `-o` or default `./hippo-out-<slug>`.
+* Directory convention: when `-o DIR` is provided, write to `DIR/manifest/manifest.json`. Without `-o`, write to `~/.brain-model/hippocampus/buffer/consolidation/manifest/manifest_YYYYMMDD_<id5>.json`.
 * Versioning: bump `manifestVersion` on breaking changes; maintain migration notes.

@@ -11,6 +11,7 @@ Consolida todos os testes relacionados ao comando set:
 from __future__ import annotations
 
 from pathlib import Path
+
 from core.cli.root import main
 
 
@@ -21,6 +22,7 @@ def _run_ok(argv):
 
 
 # === GENERATE TEMPLATE FUNCTIONALITY ===
+
 
 def test_set_generate_template_stdout(monkeypatch, tmp_path: Path, capsys):
     """Testa generate template para stdout"""
@@ -46,6 +48,7 @@ def test_set_generate_template_to_file(monkeypatch, tmp_path: Path, capsys):
 
 
 # === YAML FILE APPLICATION ===
+
 
 def test_set_file_apply_yaml_merge_and_reset(monkeypatch, tmp_path: Path):
     """Testa aplicação de YAML com merge e reset"""
@@ -77,14 +80,14 @@ api:
 
     data_after_merge = cfg_path.read_text(encoding="utf-8")
     assert "gpt-4o-mini" in data_after_merge  # original model preserved
-    assert "openai" in data_after_merge       # new provider added
+    assert "openai" in data_after_merge  # new provider added
 
     # test reset behavior
     assert main(["set", "--file", str(cfg_yaml2), "--reset"]) == 0  # type: ignore[arg-type]
 
     data_after_reset = cfg_path.read_text(encoding="utf-8")
     assert "gpt-4o-mini" not in data_after_reset  # original model removed
-    assert "openai" in data_after_reset           # only new config
+    assert "openai" in data_after_reset  # only new config
 
 
 def test_set_generate_template_and_apply_reset_merge(tmp_path, monkeypatch):
@@ -107,6 +110,7 @@ def test_set_generate_template_and_apply_reset_merge(tmp_path, monkeypatch):
 
 
 # === KEY-VALUE PAIR FUNCTIONALITY ===
+
 
 def test_set_key_value_pairs(monkeypatch, tmp_path: Path):
     """Testa definição de chaves individuais (key=value)"""
@@ -156,6 +160,7 @@ def test_set_invalid_key_format(tmp_path, capsys):
 
 # === SCOPE FUNCTIONALITY ===
 
+
 def test_set_local_vs_global_scope(monkeypatch, tmp_path: Path):
     """Testa diferença entre scope local e global"""
     monkeypatch.chdir(tmp_path)
@@ -193,9 +198,11 @@ def test_set_template_with_different_scopes(monkeypatch, tmp_path: Path):
 
 # === HELP AND UI FUNCTIONALITY ===
 
+
 def test_set_command_help_flag(monkeypatch, capsys):
     """Testa comando set com flag -h"""
     from unittest.mock import patch
+
     from core.cli.root import _cmd_set
 
     with patch("core.cli.root._print_set_help_rich") as mock_help:
@@ -208,6 +215,7 @@ def test_set_command_help_flag(monkeypatch, capsys):
 def test_set_command_help_long_flag(monkeypatch, capsys):
     """Testa comando set com flag --help"""
     from unittest.mock import patch
+
     from core.cli.root import _cmd_set
 
     with patch("core.cli.root._print_set_help_rich") as mock_help:
@@ -220,18 +228,21 @@ def test_set_command_help_long_flag(monkeypatch, capsys):
 def test_print_set_help_rich_output(monkeypatch, capsys):
     """Testa saída completa da função _print_set_help_rich"""
     from unittest.mock import patch
+
     from core.cli.root import _print_set_help_rich
 
     # Mock das funções de UI do rich
-    with patch("core.cli.root.rule") as mock_rule, \
-         patch("core.cli.root.summary_panel") as mock_panel:
-
+    with (
+        patch("core.cli.root.rule") as mock_rule,
+        patch("core.cli.root.summary_panel") as mock_panel,
+    ):
         _print_set_help_rich()
 
         # Verificar que rule foi chamado com título correto
         mock_rule.assert_called_once_with("hippo set — Help")
 
-        # Verificar que summary_panel foi chamado 4 vezes (Usage, Options, Keys, Examples)
+        # Verificar que summary_panel foi chamado 4 vezes
+        # (Usage, Options, Keys, Examples)
         assert mock_panel.call_count == 4
 
         # Verificar conteúdo das chamadas
@@ -258,11 +269,13 @@ def test_print_set_help_rich_output(monkeypatch, capsys):
 def test_help_rich_formatting_content():
     """Testa conteúdo específico da formatação rich"""
     from unittest.mock import patch
+
     from core.cli.root import _print_set_help_rich
 
-    with patch("core.cli.root.rule") as mock_rule, \
-         patch("core.cli.root.summary_panel") as mock_panel:
-
+    with (
+        patch("core.cli.root.rule") as mock_rule,
+        patch("core.cli.root.summary_panel") as mock_panel,
+    ):
         _print_set_help_rich()
 
         # Verificar formatação do título
@@ -276,8 +289,8 @@ def test_help_rich_formatting_content():
         assert usage_call[0][0] == "Usage"
         usage_text = usage_call[0][1]
         assert "hippo set [--local|--global]" in usage_text
-        assert "[--generate-template|-o PATH|--file YAML" in usage_text
-        assert "[--merge|--reset]]" in usage_text
+        assert "[--generate-template|-o PATH|" in usage_text
+        assert "--file YAML [--merge|--reset]]" in usage_text
         assert "hippo set key=value" in usage_text
 
         # Verificar estrutura de Examples
@@ -289,6 +302,7 @@ def test_help_rich_formatting_content():
 
 
 # === ERROR HANDLING ===
+
 
 def test_set_no_arguments_error(capsys):
     """Testa set sem argumentos (deve falhar)"""
@@ -310,10 +324,11 @@ def test_set_invalid_yaml_file(tmp_path, capsys):
 def test_set_nonexistent_yaml_file(capsys):
     """Testa set com arquivo inexistente"""
     code = main(["set", "--file", "/nonexistent/file.yaml"])  # type: ignore[arg-type]
-    assert code == 1
+    assert code == 3  # ExitCode.FILE_NOT_FOUND
 
 
 # === INTEGRATION TESTS ===
+
 
 def test_set_complete_workflow(monkeypatch, tmp_path: Path):
     """Testa workflow completo de configuração"""
@@ -324,7 +339,8 @@ def test_set_complete_workflow(monkeypatch, tmp_path: Path):
     _run_ok(["set", "--generate-template", "-o", str(template_file)])
 
     # 2. Modify template
-    template_file.write_text("""
+    template_file.write_text(
+        """
 engine:
   provider: openai
   model: gpt-4o-mini
@@ -332,7 +348,9 @@ engine:
 api:
   openai:
     key: sk-test123
-""".strip(), encoding="utf-8")
+""".strip(),
+        encoding="utf-8",
+    )
 
     # 3. Apply configuration
     _run_ok(["set", "--file", str(template_file)])
