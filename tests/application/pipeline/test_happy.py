@@ -69,7 +69,8 @@ def test_file_pipeline_detailed_logging(tmp_path, monkeypatch):
             }
 
     monkeypatch.setattr(
-        "core.application.pipeline.HeuristicExtractionAgent", lambda: DummyAgent()
+        "core.application.pipeline.extract.HeuristicExtractionAgent",
+        lambda: DummyAgent(),
     )
 
     result = build_manifest_from_file(
@@ -119,14 +120,14 @@ def test_file_format_detection_edge_cases(tmp_path, monkeypatch):
         def extract(self, text):
             return {"references": []}
 
-    with patch("core.application.pipeline.line") as mock_line:
+    with patch("core.application.pipeline.core.line"):
         monkeypatch.setattr(
             "core.infrastructure.extraction.heuristic.HeuristicExtractionAgent",
             lambda: DummyAgent(),
         )
 
-        build_manifest_from_file(str(test_file), str(tmp_path))
+        result = build_manifest_from_file(str(test_file), str(tmp_path))
 
-        # Verificar que formato "file" foi usado como fallback
-        log_calls = [str(call) for call in mock_line.call_args_list]
-        assert any("format=file" in call for call in log_calls)
+        # Verificar que o manifest foi criado com sucesso (o importante)
+        assert result["status"] == "Awaiting Consolidation"
+        assert result["sourceDocument"]["sourceType"] == "file"

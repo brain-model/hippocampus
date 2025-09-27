@@ -28,7 +28,7 @@ def test_collect_invalid_reference_schema_error_template_output(
             }
 
     monkeypatch.setattr(
-        "core.application.pipeline.HeuristicExtractionAgent", lambda: BadAgent()
+        "core.application.pipeline.extract.HeuristicExtractionAgent", lambda: BadAgent()
     )
 
     out_dir = tmp_path / "out"
@@ -61,7 +61,7 @@ def test_collect_file_invalid_reference_schema_error_template_output(
             }
 
     monkeypatch.setattr(
-        "core.application.pipeline.HeuristicExtractionAgent", lambda: BadAgent()
+        "core.application.pipeline.extract.HeuristicExtractionAgent", lambda: BadAgent()
     )
 
     src = tmp_path / "doc.txt"
@@ -85,11 +85,12 @@ def test_collect_incompatible_manifest_version_error(
             return {"references": []}
 
     monkeypatch.setattr(
-        "core.application.pipeline.HeuristicExtractionAgent", lambda: GoodAgent()
+        "core.application.pipeline.extract.HeuristicExtractionAgent",
+        lambda: GoodAgent(),
     )
-    # Força versão incompatível no pipeline
+    # Força versão incompatível no pipeline onde é usada
     monkeypatch.setattr(
-        "core.application.pipeline.MANIFEST_VERSION", "2.0.0", raising=False
+        "core.application.pipeline.assemble.MANIFEST_VERSION", "2.0.0", raising=False
     )
 
     out_dir = tmp_path / "out"

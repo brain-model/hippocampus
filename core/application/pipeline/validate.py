@@ -1,7 +1,8 @@
-"""Validation utilities for manifests using JSON Schema (Draft-07).
+"""Manifest validation module.
 
-This module exposes helpers to validate a manifest dictionary against the
-project's canonical JSON Schema, raising detailed errors on violations.
+This module handles schema validation and error handling for manifests:
+- JSON Schema validation integration
+- Error message formatting and handling
 """
 
 from __future__ import annotations

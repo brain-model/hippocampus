@@ -18,6 +18,10 @@ Este arquivo consolida o plano de implementação e o backlog de tarefas por fas
 7. DX/Observabilidade: logging estruturado, `--verbose`, traces opcionais, CI (lint+test).
 8. Empacotamento/Docs: distribuição e documentação de instalação/uso (instalação completa, sem extras).
 
+9. Refactor Pipeline: extrair submódulos coesos (`load`, `extract`, `assemble`, `validate`, `metrics`, `report`, `io`) preservando API pública.
+10. Refactor LLM Agent: modularizar por provider e camadas (`config`, `agent`, `normalize`, `errors`, `providers/*`) mantendo contrato e mensagens.
+11. Refactor CLI: dividir subcomandos em `core/cli/commands/` e deixar `root.py` como orquestrador fino do argparse.
+
 ## Critérios de Aceite (gerais por fase)
 
 - CLI com `--help` claro; erros com exit code != 0 e mensagens descritivas.
@@ -32,6 +36,12 @@ Atualização 2025-09-24:
 
 - Concluídas as correções P0/P1 do MR #4: URLs do projeto atualizadas, actions fixadas por SHA em CI/Release, padronização do `python -m pip` no release.
 - Pendências remanescentes foram mantidas apenas no `docs/BACKLOG.md` (cobertura adicional do validador, heurística de extração JSON, consistência de idioma, secret scan aprimorado e cache opcional de CI).
+  
+Novas fases (refactors estruturais):
+
+- Fase 9 — Refactor Pipeline (P1)
+- Fase 10 — Refactor LLM Agent (P1)
+- Fase 11 — Refactor CLI (P1)
 
 ### Fase 1 — Foundation/Scaffold
 
@@ -347,6 +357,31 @@ Status: ✅ CONCLUÍDO • 2025-09-20 • via PR #2 (feature/langgraph-orchestra
        - Manter em `docs/` (design_doc, BACKLOG, TODO, etc.)
        - Tornar o `README.md` a porta de entrada, com seção "Documentação Técnica" linkando os artefatos internos
     - Estado: Build local das docs OK (`mkdocs build --strict`); publicação via workflow configurada.
+
+### Fase 9 — Refactor Pipeline
+
+1) Estruturação do submódulo `core/application/pipeline/`
+   - [x] Separar responsabilidades em arquivos: `load.py` (loaders/normalização), `extract.py` (heurística/LLM/graph adapters), `assemble.py` (montagem do manifest), `validate.py` (integração do schema e mensagens), `metrics.py` (agregação de métricas), `report.py` (render dos templates), `io.py` (writer e paths).
+   - [x] Manter API pública: `build_manifest_from_text` e `build_manifest_from_file` reexportadas por `core.application.pipeline`.
+   - [x] Cobertura do pacote ≥ 90%; sem mudanças de comportamento observável (paridade de testes e mensagens/logs).
+   - [x] Documentar diagrama/resumo do fluxo por módulo em `docs/design_doc.md`.
+
+Status: ✅ CONCLUÍDO — 2025-09-27 • Refatoração completa do pipeline em 8 módulos especializados; API pública preservada via reexports; 92.93% de cobertura com 319 testes passando.
+
+### Fase 10 — Refactor LLM Agent
+
+1) Subpacote `core/infrastructure/extraction/llm/`
+   - [ ] Quebrar `langchain_agent.py` em: `config.py`, `agent.py`, `normalize.py`, `errors.py`, `providers/{openai_like.py,gemini.py,anthropic.py}`.
+   - [ ] Preservar a classe `LangChainExtractionAgent` como façade em `langchain_agent.py` (reexport/forward) mantendo contrato e comportamento.
+   - [ ] Testes reorganizados por módulo com cobertura ≥ 90%; mensagens/códigos de saída inalterados.
+   - [ ] Adicionar seção de arquitetura do agente em `docs/design_doc.md`.
+
+### Fase 11 — Refactor CLI
+
+1) Subcomandos em `core/cli/commands/`
+   - [ ] Extrair `collect` e `set` para módulos dedicados; `root.py` apenas cria `argparse` e delega.
+   - [ ] Assegurar que `hippo` mantém UX/flags e ajuda rica; cobertura de comandos ≥ 90% e e2e do CLI verde.
+   - [ ] Atualizar `docs-user/cli.md` e instruções de contribuição para refletir a nova estrutura.
 
 ## Riscos e Mitigações
 

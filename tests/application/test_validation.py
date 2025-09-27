@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from core.application.validation import validate_manifest
+from core.application.pipeline.validate import validate_manifest
 
 
 def test_validate_manifest_ok(schema_path: str):
