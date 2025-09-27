@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from core.application.validation import validate_manifest
+from core.application.pipeline.validate import validate_manifest
 
 BASE = {
     "manifestVersion": "1.0.0",

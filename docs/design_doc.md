@@ -230,7 +230,16 @@ The beauty of this design lies in the flexibility of the `details` field.
   * `core/domain/interfaces.py`: `DocumentLoader`, `ExtractionAgent`, `Formatter` contracts.
 
 * Application
-  * `core/application/pipeline.py`: `build_manifest_from_text|file` orchestration; I/O discipline; error mapping.
+  * `core/application/pipeline/`: refactored modular pipeline structure:
+    * `__init__.py`: API pública (reexports `build_manifest_from_text|file`)
+    * `core.py`: orchestration functions and schema path resolution
+    * `load.py`: document loading and normalization
+    * `extract.py`: extraction engine adapters (heuristic/LLM/graph)
+    * `assemble.py`: manifest assembly and reference counting
+    * `validate.py`: schema validation integration
+    * `metrics.py`: metrics aggregation and environment handling
+    * `report.py`: template rendering and timing
+    * `io.py`: file writing and output path management
   * `core/application/validation.py`: schema validation utilities.
 
 * CLI

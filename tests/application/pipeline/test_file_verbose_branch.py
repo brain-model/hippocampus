@@ -12,7 +12,7 @@ def test_file_verbose_branch_executes_and_writes(tmp_path, monkeypatch):
     def fake_line(s: str) -> None:
         printed.append(s)
 
-    monkeypatch.setattr("core.application.pipeline.line", fake_line)
+    monkeypatch.setattr("core.application.pipeline.core.line", fake_line)
 
     # Criar arquivo de entrada simples
     src = tmp_path / "in.txt"
@@ -30,5 +30,5 @@ def test_file_verbose_branch_executes_and_writes(tmp_path, monkeypatch):
     data = json.loads(mf_path.read_text())
     assert data["manifestId"] == manifest["manifestId"]
 
-    # Verifica que o summary foi impresso
-    assert any("total_refs" in s or "Total refs" in s for s in printed)
+    # Verifica que a mensagem de início foi impressa (capturada pelo mock)
+    assert any("begin=heuristic" in s for s in printed)

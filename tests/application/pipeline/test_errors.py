@@ -8,7 +8,11 @@ def test_pipeline_manifest_validation_error(monkeypatch, tmp_path):
     def fake_validate_manifest(manifest, schema_path):
         raise RuntimeError("Manifesto inválido")
 
-    monkeypatch.setattr(pipeline, "validate_manifest", fake_validate_manifest)
+    # Patch na função onde ela é importada no módulo core
+    monkeypatch.setattr(
+        "core.application.pipeline.core.validate_manifest", fake_validate_manifest
+    )
+
     with pytest.raises(RuntimeError, match="Manifesto inválido"):
         pipeline.build_manifest_from_text("Texto", str(tmp_path))
 
@@ -19,7 +23,9 @@ def test_pipeline_persist_error(monkeypatch, tmp_path):
         def write(self, manifest, out_dir):
             raise RuntimeError("Erro ao persistir arquivo")
 
-    monkeypatch.setattr(pipeline, "ManifestJsonWriter", lambda: BadWriter())
+    monkeypatch.setattr(
+        "core.application.pipeline.io.ManifestJsonWriter", lambda: BadWriter()
+    )
     with pytest.raises(RuntimeError, match="Erro ao persistir arquivo"):
         pipeline.build_manifest_from_text("Texto", str(tmp_path))
 
@@ -30,7 +36,10 @@ def test_pipeline_agent_timeout(monkeypatch, tmp_path):
         def extract(self, text):
             raise TimeoutError("timeout")
 
-    monkeypatch.setattr(pipeline, "HeuristicExtractionAgent", lambda: BadAgent())
+    # Mock the HeuristicExtractionAgent where it's imported in the extract module
+    monkeypatch.setattr(
+        "core.application.pipeline.extract.HeuristicExtractionAgent", lambda: BadAgent()
+    )
     with pytest.raises(TimeoutError):
         pipeline.build_manifest_from_text("Texto", str(tmp_path))
 
@@ -41,7 +50,8 @@ def test_pipeline_loader_error(monkeypatch, tmp_path):
         def load(self, text=None, file_path=None):
             raise RuntimeError("Erro no loader")
 
-    monkeypatch.setattr(pipeline, "TextLoader", BadLoader)
+    # Mock the TextLoader where it's imported in the load module
+    monkeypatch.setattr("core.application.pipeline.load.TextLoader", BadLoader)
     with pytest.raises(RuntimeError, match="Erro no loader"):
         pipeline.build_manifest_from_text("Texto", str(tmp_path))
 
@@ -52,7 +62,10 @@ def test_pipeline_agent_extraction_error(monkeypatch, tmp_path):
         def extract(self, text):
             raise ValueError("Erro na extração")
 
-    monkeypatch.setattr(pipeline, "HeuristicExtractionAgent", lambda: BadAgent())
+    # Mock the HeuristicExtractionAgent where it's imported in the extract module
+    monkeypatch.setattr(
+        "core.application.pipeline.extract.HeuristicExtractionAgent", lambda: BadAgent()
+    )
     with pytest.raises(ValueError, match="Erro na extração"):
         pipeline.build_manifest_from_text("Texto", str(tmp_path))
 

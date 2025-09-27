@@ -116,7 +116,7 @@ def test_verbose_log_begin_with_llm_provenance(tmp_path, monkeypatch):
             return {"references": []}
 
     # Mock para capturar logs verbose
-    with patch("core.application.pipeline.line") as mock_line:
+    with patch("core.application.pipeline.core.line") as mock_line:
         monkeypatch.setattr(
             "core.infrastructure.extraction.langchain_agent.LangChainExtractionAgent",
             lambda **kwargs: DummyAgent(),
@@ -146,7 +146,7 @@ def test_non_verbose_llm_provenance_logging(tmp_path, monkeypatch):
         def extract(self, text):
             return {"references": []}
 
-    with patch("core.application.pipeline.line") as mock_line:
+    with patch("core.application.pipeline.report.line") as mock_line:
         monkeypatch.setattr(
             "core.infrastructure.extraction.langchain_agent.LangChainExtractionAgent",
             lambda **kwargs: DummyAgent(),
@@ -233,7 +233,7 @@ def test_verbose_report_generation(tmp_path, monkeypatch):
                 ]
             }
 
-    with patch("core.application.pipeline.summary_panel") as mock_panel:
+    with patch("core.application.pipeline.report.summary_panel") as mock_panel:
         monkeypatch.setattr(
             "core.application.pipeline.HeuristicExtractionAgent", lambda: DummyAgent()
         )

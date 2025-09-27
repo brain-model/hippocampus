@@ -12,7 +12,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from core.application.pipeline import build_manifest_from_file, build_manifest_from_text
+from core.application.pipeline.core import (
+    build_manifest_from_file,
+    build_manifest_from_text,
+)
 from core.cli.exit_codes import get_exit_code_for_exception
 from core.infrastructure.config.manager import ConfigManager
 from core.infrastructure.logging.structured import get_logger

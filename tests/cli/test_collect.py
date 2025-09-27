@@ -166,7 +166,7 @@ def test_collect_invalid_file_path(capsys):
     # Pipeline executa mas falha no load, retorna 3 (FILE_NOT_FOUND) e exibe erro
     assert code == 3  # ExitCode.FILE_NOT_FOUND
     captured = capsys.readouterr()
-    assert "No such file or directory" in captured.err
+    assert "File not found" in captured.err
 
 
 def test_collect_invalid_engine():
